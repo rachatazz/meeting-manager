@@ -1,0 +1,55 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: meeting-manager-db
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: meeting-manager
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - meeting-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: meeting-manager-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/meeting-manager
+      NODE_ENV: production
+    ports:
+      - '3001:3001'
+    depends_on:
+      - mongodb
+    networks:
+      - meeting-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: meeting-manager-frontend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NUXT_PUBLIC_API_URL: http://backend:3001/api/v1
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+    networks:
+      - meeting-network
+
+volumes:
+  mongo_data:
+
+networks:
+  meeting-network:
+    driver: bridge
