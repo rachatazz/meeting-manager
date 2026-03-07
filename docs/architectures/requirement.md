@@ -21,12 +21,12 @@ Build a simple Meeting Manager web application where users can create, update, d
 - Containerized the web for deployment (Including Frontend, Backend, and Database).
 - Deploy the app (e.g., on Vercel/Render/Heroku/Docker).
 
-### Bonus (Optional)
+### Bonus
 
 - Add user authentication (login/logout).
-- UI Design (e.g., Figma, Adobe XD, Sketch, Penpot) is a plus.
+- UI Design (e.g., Figma, Adobe XD, Sketch, Penpot) is a plus (Optional).
 - Add tests (unit or integration).
-- CI/CD flow for testing and deployment. (e.g., GitHub Action)
+- CI/CD flow for testing and deployment. (e.g., GitHub Action) (Optional)
 
 ### Deliverables
 
@@ -40,7 +40,7 @@ Build a simple Meeting Manager web application where users can create, update, d
 
 ### App Flow (Wireframe Pages)
 
-1. Login / Logout (optional)
+1. Login / Logout
    - Login screen:
      - Company logo + title “Candidate Meeting Scheduler”
      - Email + password inputs
