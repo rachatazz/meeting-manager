@@ -1,85 +1,118 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-50">
-    <div class="w-full max-w-md">
-      <div class="bg-white rounded-2xl shadow-md p-8">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Login</h2>
-
-        <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">Email</label>
-            <InputText
-              v-model="form.email"
-              type="email"
-              placeholder="you@example.com"
-              :invalid="!!errors.email"
-              class="w-full"
-            />
-            <small v-if="errors.email" class="text-red-500">{{ errors.email }}</small>
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">Password</label>
-            <Password
-              v-model="form.password"
-              placeholder="Password"
-              :feedback="false"
-              :invalid="!!errors.password"
-              input-class="w-full"
-              class="w-full"
-            />
-            <small v-if="errors.password" class="text-red-500">{{ errors.password }}</small>
-          </div>
-
-          <Message v-if="apiError" severity="error" :closable="false">{{ apiError }}</Message>
-
-          <Button
-            type="submit"
-            label="Login"
-            :loading="loading"
-            class="w-full"
-          />
-        </form>
-
-        <p class="mt-4 text-center text-sm text-gray-500">
-          Don't have an account?
-          <NuxtLink to="/auth/register" class="text-blue-600 hover:underline">Register</NuxtLink>
-        </p>
+  <div class="bg-white border border-slate-200 rounded-lg shadow-lg p-6 sm:p-8">
+    <!-- Logo -->
+    <div class="flex flex-col items-center mb-8">
+      <div class="w-16 h-16 rounded-full bg-[var(--p-primary-color)] flex items-center justify-center mb-4">
+        <i class="pi pi-calendar text-white text-2xl" />
       </div>
+      <h1 class="text-2xl font-bold text-slate-900">Meeting Manager</h1>
+      <p class="text-sm text-slate-500 mt-1">Candidate Scheduler</p>
     </div>
+
+    <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-900 mb-2">Email</label>
+        <InputText
+          v-model="form.email"
+          type="email"
+          placeholder="your.email@company.com"
+          class="w-full"
+          :class="{ 'border-red-500': errors.email }"
+          :disabled="loading"
+        />
+        <small v-if="errors.email" class="text-red-500 text-xs mt-1 block">{{
+          errors.email
+        }}</small>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-900 mb-2">Password</label>
+        <Password
+          v-model="form.password"
+          placeholder="••••••••"
+          :feedback="false"
+          toggle-mask
+          class="w-full"
+          input-class="w-full"
+          :class="{ 'border-red-500': errors.password }"
+          :disabled="loading"
+        />
+        <small v-if="errors.password" class="text-red-500 text-xs mt-1 block">{{
+          errors.password
+        }}</small>
+      </div>
+
+      <Message v-if="apiError" severity="error" :closable="false" class="mt-1">{{
+        apiError
+      }}</Message>
+
+      <Button
+        type="submit"
+        :label="loading ? 'Logging in...' : 'Login'"
+        :icon="loading ? 'pi pi-spin pi-spinner' : undefined"
+        :disabled="loading"
+        class="w-full mt-2"
+      />
+    </form>
+
+    <div class="flex items-center gap-3 my-6">
+      <div class="flex-1 h-px bg-slate-200" />
+      <span class="text-sm text-slate-500">or</span>
+      <div class="flex-1 h-px bg-slate-200" />
+    </div>
+
+    <Button
+      label="Continue as Guest"
+      icon="pi pi-user"
+      severity="secondary"
+      outlined
+      :disabled="loading"
+      class="w-full"
+      @click="navigateTo('/auth/register-guest')"
+    />
+
+    <p class="mt-6 text-center text-sm text-slate-500">
+      Don't have an account?
+      <NuxtLink to="/auth/register" class="text-blue-500 hover:underline font-medium"
+        >Register</NuxtLink
+      >
+    </p>
   </div>
 </template>
 
 <script setup lang="ts">
-const authStore = useAuthStore();
-const router = useRouter();
+definePageMeta({ layout: 'auth' });
+
+const { login } = useAuth();
 
 const form = reactive({ email: '', password: '' });
 const errors = reactive<Record<string, string>>({});
 const loading = ref(false);
 const apiError = ref('');
 
+function validate(): boolean {
+  Object.keys(errors).forEach((k) => delete errors[k]);
+  if (!form.email) errors.email = 'Email is required';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Invalid email format';
+  if (!form.password) errors.password = 'Password is required';
+  else if (form.password.length < 6) errors.password = 'Password must be at least 6 characters';
+  return Object.keys(errors).length === 0;
+}
+
 async function handleLogin() {
+  if (!validate()) return;
   loading.value = true;
   apiError.value = '';
-  Object.keys(errors).forEach((k) => delete errors[k]);
-
   try {
-    const config = useRuntimeConfig();
-    const data = await $fetch<{ success: boolean; data: { user: { id: string; email: string; fullName: string; role: string }; accessToken: string; refreshToken: string } }>(
-      `${config.public.apiUrl}/auth/login`,
-      { method: 'POST', body: form }
-    );
-
-    if (data.success) {
-      authStore.setAuth(data.data.user, data.data.accessToken, data.data.refreshToken);
-      router.push('/dashboard');
-    }
+    await login(form.email, form.password);
   } catch (err: unknown) {
-    const error = err as { data?: { error?: { message?: string; details?: Array<{ field: string; message: string }> } } };
-    if (error?.data?.error?.details) {
-      error.data.error.details.forEach((d) => { errors[d.field] = d.message; });
+    const { data } = err as ApiErrorResponse;
+    if (data?.error?.details) {
+      data.error.details.forEach((d) => {
+        errors[d.field] = d.message;
+      });
     } else {
-      apiError.value = error?.data?.error?.message || 'Login failed';
+      apiError.value = data?.error?.message || 'Login failed. Please try again.';
     }
   } finally {
     loading.value = false;

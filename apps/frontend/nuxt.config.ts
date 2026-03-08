@@ -1,29 +1,101 @@
-import Aura from "@primeuix/themes/aura";
+import { definePreset } from '@primeuix/themes';
+import Aura from '@primeuix/themes/aura';
+
+const MeetingManagerPreset = definePreset(Aura, {
+  semantic: {
+    primary: {
+      50: '{orange.50}',
+      100: '{orange.100}',
+      200: '{orange.200}',
+      300: '{orange.300}',
+      400: '{orange.400}',
+      500: '{orange.500}',
+      600: '{orange.600}',
+      700: '{orange.700}',
+      800: '{orange.800}',
+      900: '{orange.900}',
+      950: '{orange.950}',
+    },
+    colorScheme: {
+      light: {
+        surface: {
+          0: '#FFFFFF',
+          50: '{slate.50}',
+          100: '{slate.100}',
+          200: '{slate.200}',
+          300: '{slate.300}',
+          400: '{slate.400}',
+          500: '{slate.500}',
+          600: '{slate.600}',
+          700: '{slate.700}',
+          800: '{slate.800}',
+          900: '{slate.900}',
+          950: '{slate.950}',
+        },
+      },
+    },
+  },
+});
 
 export default defineNuxtConfig({
-  compatibilityDate: "2024-11-01",
+  compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
   future: {
     compatibilityVersion: 4,
   },
 
-  modules: ["@nuxtjs/tailwindcss", "@pinia/nuxt", "@primevue/nuxt-module"],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', '@primevue/nuxt-module'],
+
+  css: ['~/assets/css/main.css'],
+
+  tailwindcss: {
+    exposeConfig: false,
+  },
 
   primevue: {
     options: {
       theme: {
-        preset: Aura,
+        preset: MeetingManagerPreset,
         options: {
-          darkModeSelector: ".dark",
+          darkModeSelector: '.dark',
         },
       },
+      ripple: true,
     },
+    components: {
+      include: [
+        'Button',
+        'InputText',
+        'Password',
+        'Select',
+        'Textarea',
+        'Message',
+        'Toast',
+        'ConfirmDialog',
+        'DatePicker',
+        'IconField',
+        'InputIcon',
+        'ProgressSpinner',
+        'Dialog',
+        'Tag',
+        'RadioButton',
+        'Popover',
+        'Drawer',
+      ],
+    },
+    composables: {
+      include: ['useToast', 'useConfirm'],
+    },
+  },
+
+  pinia: {
+    storesDirs: ['./app/stores/**'],
   },
 
   runtimeConfig: {
     public: {
-      apiUrl: process.env.NUXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
+      apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1',
     },
   },
 

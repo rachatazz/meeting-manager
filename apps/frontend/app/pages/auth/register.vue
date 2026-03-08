@@ -1,111 +1,182 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-50">
-    <div class="w-full max-w-md">
-      <div class="bg-white rounded-2xl shadow-md p-8">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Register</h2>
-
-        <form @submit.prevent="handleRegister" class="flex flex-col gap-4">
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">Full Name</label>
-            <InputText
-              v-model="form.fullName"
-              placeholder="John Doe"
-              :invalid="!!errors.fullName"
-              class="w-full"
-            />
-            <small v-if="errors.fullName" class="text-red-500">{{ errors.fullName }}</small>
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">Email</label>
-            <InputText
-              v-model="form.email"
-              type="email"
-              placeholder="you@example.com"
-              :invalid="!!errors.email"
-              class="w-full"
-            />
-            <small v-if="errors.email" class="text-red-500">{{ errors.email }}</small>
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">Password</label>
-            <Password
-              v-model="form.password"
-              placeholder="Min 8 chars, 1 upper, 1 number, 1 special"
-              :invalid="!!errors.password"
-              input-class="w-full"
-              class="w-full"
-            />
-            <small v-if="errors.password" class="text-red-500">{{ errors.password }}</small>
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">Role</label>
-            <Select
-              v-model="form.role"
-              :options="roles"
-              option-label="label"
-              option-value="value"
-              class="w-full"
-            />
-          </div>
-
-          <Message v-if="apiError" severity="error" :closable="false">{{ apiError }}</Message>
-
-          <Button
-            type="submit"
-            label="Register"
-            :loading="loading"
-            class="w-full"
-          />
-        </form>
-
-        <p class="mt-4 text-center text-sm text-gray-500">
-          Already have an account?
-          <NuxtLink to="/auth/login" class="text-blue-600 hover:underline">Login</NuxtLink>
-        </p>
+  <div class="bg-white border border-slate-200 rounded-lg shadow-lg p-6 sm:p-8">
+    <!-- Logo -->
+    <div class="flex flex-col items-center mb-8">
+      <div class="w-16 h-16 rounded-full bg-[var(--p-primary-color)] flex items-center justify-center mb-4">
+        <i class="pi pi-user-plus text-white text-2xl" />
       </div>
+      <h1 class="text-2xl font-bold text-slate-900">Create Account</h1>
+      <p class="text-sm text-slate-500 mt-1">Join our team</p>
     </div>
+
+    <form @submit.prevent="handleRegister" class="flex flex-col gap-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-900 mb-2"
+          >Full Name <span class="text-red-500">*</span></label
+        >
+        <InputText
+          v-model="form.fullName"
+          placeholder="John Doe"
+          class="w-full"
+          :class="{ 'border-red-500': errors.fullName }"
+          :disabled="loading"
+        />
+        <small v-if="errors.fullName" class="text-red-500 text-xs mt-1 block">{{
+          errors.fullName
+        }}</small>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-900 mb-2"
+          >Email <span class="text-red-500">*</span></label
+        >
+        <InputText
+          v-model="form.email"
+          type="email"
+          placeholder="your.email@company.com"
+          class="w-full"
+          :class="{ 'border-red-500': errors.email }"
+          :disabled="loading"
+        />
+        <small v-if="errors.email" class="text-red-500 text-xs mt-1 block">{{
+          errors.email
+        }}</small>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-900 mb-2"
+          >Password <span class="text-red-500">*</span></label
+        >
+        <Password
+          v-model="form.password"
+          placeholder="••••••••"
+          :feedback="false"
+          toggle-mask
+          class="w-full"
+          input-class="w-full"
+          :class="{ 'border-red-500': errors.password }"
+          :disabled="loading"
+        />
+        <!-- Password strength bar -->
+        <div class="mt-2 h-1 rounded bg-slate-200 overflow-hidden">
+          <div
+            class="h-full rounded transition-all duration-300"
+            :style="{ width: `${passwordStrength.pct}%`, backgroundColor: passwordStrength.color }"
+          />
+        </div>
+        <small v-if="errors.password" class="text-red-500 text-xs mt-1 block">{{
+          errors.password
+        }}</small>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-900 mb-2"
+          >Confirm Password <span class="text-red-500">*</span></label
+        >
+        <Password
+          v-model="form.confirmPassword"
+          placeholder="••••••••"
+          :feedback="false"
+          toggle-mask
+          class="w-full"
+          input-class="w-full"
+          :class="{ 'border-red-500': errors.confirmPassword }"
+          :disabled="loading"
+        />
+        <small v-if="errors.confirmPassword" class="text-red-500 text-xs mt-1 block">{{
+          errors.confirmPassword
+        }}</small>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-900 mb-2"
+          >Role <span class="text-red-500">*</span></label
+        >
+        <Select
+          v-model="form.role"
+          :options="roles"
+          option-label="label"
+          option-value="value"
+          placeholder="Select Role"
+          class="w-full"
+          :class="{ 'border-red-500': errors.role }"
+        />
+        <small v-if="errors.role" class="text-red-500 text-xs mt-1 block">{{ errors.role }}</small>
+      </div>
+
+      <Message v-if="apiError" severity="error" :closable="false">{{ apiError }}</Message>
+
+      <Button
+        type="submit"
+        :label="loading ? 'Creating account...' : 'Create Account'"
+        :icon="loading ? 'pi pi-spin pi-spinner' : undefined"
+        :disabled="loading"
+        class="w-full mt-2"
+      />
+    </form>
+
+    <p class="mt-6 text-center text-sm text-slate-500">
+      Already have an account?
+      <NuxtLink to="/auth/login" class="text-blue-500 hover:underline font-medium">Login</NuxtLink>
+    </p>
   </div>
 </template>
 
 <script setup lang="ts">
-const authStore = useAuthStore();
-const router = useRouter();
+definePageMeta({ layout: 'auth' });
+
+const { register } = useAuth();
 
 const roles = [
   { label: 'Recruiter', value: 'recruiter' },
   { label: 'Interviewer', value: 'interviewer' },
+  { label: 'Admin', value: 'admin' },
 ];
 
-const form = reactive({ fullName: '', email: '', password: '', role: 'recruiter' });
+const form = reactive({ fullName: '', email: '', password: '', confirmPassword: '', role: '' });
 const errors = reactive<Record<string, string>>({});
 const loading = ref(false);
 const apiError = ref('');
 
+const passwordStrength = computed(() => {
+  const p = form.password;
+  if (!p) return { pct: 0, color: '#E2E8F0' };
+  let score = 0;
+  if (p.length >= 8) score++;
+  if (/[A-Z]/.test(p)) score++;
+  if (/[0-9]/.test(p)) score++;
+  if (/[^A-Za-z0-9]/.test(p)) score++;
+  const colors = ['#EF4444', '#F59E0B', '#F59E0B', '#10B981', '#10B981'];
+  return { pct: (score / 4) * 100, color: colors[score] };
+});
+
+function validate(): boolean {
+  Object.keys(errors).forEach((k) => delete errors[k]);
+  if (!form.fullName.trim() || form.fullName.length < 2)
+    errors.fullName = 'Full name must be at least 2 characters';
+  if (!form.email) errors.email = 'Email is required';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Invalid email format';
+  if (!form.password || form.password.length < 8)
+    errors.password = 'Password must be at least 8 characters';
+  if (form.password !== form.confirmPassword) errors.confirmPassword = 'Passwords do not match';
+  if (!form.role) errors.role = 'Role is required';
+  return Object.keys(errors).length === 0;
+}
+
 async function handleRegister() {
+  if (!validate()) return;
   loading.value = true;
   apiError.value = '';
-  Object.keys(errors).forEach((k) => delete errors[k]);
-
   try {
-    const config = useRuntimeConfig();
-    const data = await $fetch<{ success: boolean; data: { user: { id: string; email: string; fullName: string; role: string }; accessToken: string; refreshToken: string } }>(
-      `${config.public.apiUrl}/auth/register`,
-      { method: 'POST', body: form }
-    );
-
-    if (data.success) {
-      authStore.setAuth(data.data.user, data.data.accessToken, data.data.refreshToken);
-      router.push('/dashboard');
-    }
+    await register(form.fullName, form.email, form.password, form.role);
   } catch (err: unknown) {
-    const error = err as { data?: { error?: { message?: string; details?: Array<{ field: string; message: string }> } } };
-    if (error?.data?.error?.details) {
-      error.data.error.details.forEach((d) => { errors[d.field] = d.message; });
+    const { data } = err as ApiErrorResponse;
+    if (data?.error?.details) {
+      data.error.details.forEach((d) => {
+        errors[d.field] = d.message;
+      });
     } else {
-      apiError.value = error?.data?.error?.message || 'Registration failed';
+      apiError.value = data?.error?.message || 'Registration failed. Please try again.';
     }
   } finally {
     loading.value = false;
