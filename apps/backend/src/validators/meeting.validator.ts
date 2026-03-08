@@ -7,6 +7,14 @@ const futureDate = z
 
 export const createMeetingSchema = z
   .object({
+    title: z
+      .string()
+      .min(2, 'Title must be at least 2 characters')
+      .max(200, 'Title must not exceed 200 characters'),
+    description: z
+      .string()
+      .max(2000, 'Description must not exceed 2000 characters')
+      .optional(),
     candidateName: z
       .string()
       .min(2, 'Candidate name must be at least 2 characters')
@@ -21,10 +29,11 @@ export const createMeetingSchema = z
     platform: z.string().trim().optional(),
     meetingLink: z.string().url('Must be a valid URL').optional(),
     status: z
-      .enum(['pending', 'confirmed', 'cancelled', 'completed'])
+      .enum(['pending', 'confirmed', 'cancelled'])
       .optional()
       .default('pending'),
     notes: z.string().max(2000, 'Notes must not exceed 2000 characters').optional(),
+    interviewNotes: z.string().max(5000, 'Interview notes must not exceed 5000 characters').optional(),
   })
   .refine((data) => new Date(data.endTime) > new Date(data.startTime), {
     message: 'End time must be after start time',
@@ -37,6 +46,15 @@ export const createMeetingSchema = z
 
 export const updateMeetingSchema = z
   .object({
+    title: z
+      .string()
+      .min(2, 'Title must be at least 2 characters')
+      .max(200, 'Title must not exceed 200 characters')
+      .optional(),
+    description: z
+      .string()
+      .max(2000, 'Description must not exceed 2000 characters')
+      .optional(),
     candidateName: z
       .string()
       .min(2, 'Candidate name must be at least 2 characters')
@@ -52,8 +70,9 @@ export const updateMeetingSchema = z
     meetingType: z.enum(['online', 'onsite']).optional(),
     platform: z.string().trim().optional(),
     meetingLink: z.string().url('Must be a valid URL').optional(),
-    status: z.enum(['pending', 'confirmed', 'cancelled', 'completed']).optional(),
+    status: z.enum(['pending', 'confirmed', 'cancelled']).optional(),
     notes: z.string().max(2000, 'Notes must not exceed 2000 characters').optional(),
+    interviewNotes: z.string().max(5000, 'Interview notes must not exceed 5000 characters').optional(),
   })
   .refine(
     (data) => {
@@ -66,10 +85,14 @@ export const updateMeetingSchema = z
   );
 
 export const addFeedbackSchema = z.object({
+  topic: z
+    .string()
+    .min(1, 'Topic is required')
+    .max(200, 'Topic must not exceed 200 characters'),
   comment: z
     .string()
-    .min(10, 'Comment must be at least 10 characters')
-    .max(2000, 'Comment must not exceed 2000 characters'),
+    .max(2000, 'Comment must not exceed 2000 characters')
+    .optional(),
   rating: z
     .number()
     .int('Rating must be an integer')
@@ -88,7 +111,7 @@ export const meetingQuerySchema = z.object({
     .optional()
     .transform((v) => (v ? parseInt(v, 10) : 10))
     .pipe(z.number().int().min(1).max(100, 'Limit must not exceed 100')),
-  status: z.enum(['pending', 'confirmed', 'cancelled', 'completed']).optional(),
+  status: z.enum(['pending', 'confirmed', 'cancelled']).optional(),
   search: z.string().optional(),
   sortBy: z.enum(['startTime', 'createdAt', 'candidateName']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),

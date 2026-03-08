@@ -98,3 +98,15 @@ export async function logout(req: AuthRequest, res: Response, next: NextFunction
     next(err);
   }
 }
+
+export async function getMe(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new Error('Unauthorized');
+    }
+    const user = await authService.getMe(req.user.id);
+    res.status(200).json({ success: true, data: { user } });
+  } catch (err) {
+    next(err);
+  }
+}

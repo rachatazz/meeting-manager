@@ -1,864 +1,668 @@
 # API Test Cases
 
-## Authentication Tests
+## Test Infrastructure
 
-### Test Suite: POST /auth/register
-
-#### Test Case 1.1: Successful user registration
+### Setup (mongodb-memory-server)
 
 ```typescript
-describe('POST /auth/register', () => {
-  it('should register a new user successfully', async () => {
-    const payload = {
-      email: 'newuser@example.com',
-      password: 'SecurePass123!',
-      fullName: 'New User',
-      role: 'recruiter',
-    };
-
-    const response = await request(app).post('/api/v1/auth/register').send(payload).expect(201);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.user.email).toBe(payload.email);
-    expect(response.body.data.user.fullName).toBe(payload.fullName);
-    expect(response.body.data.accessToken).toBeDefined();
-    expect(response.body.data.refreshToken).toBeDefined();
-    expect(response.body.data.user.password).toBeUndefined();
-  });
-});
-```
-
-#### Test Case 1.2: Duplicate email registration
-
-```typescript
-it('should return 400 for duplicate email', async () => {
-  const payload = {
-    email: 'existing@example.com',
-    password: 'SecurePass123!',
-    fullName: 'Duplicate User',
-    role: 'recruiter',
-  };
-
-  await request(app).post('/api/v1/auth/register').send(payload);
-
-  const response = await request(app).post('/api/v1/auth/register').send(payload).expect(400);
-
-  expect(response.body.success).toBe(false);
-  expect(response.body.error.code).toBe('VALIDATION_ERROR');
-});
-```
-
-#### Test Case 1.3: Invalid email format
-
-```typescript
-it('should return 400 for invalid email', async () => {
-  const payload = {
-    email: 'invalid-email',
-    password: 'SecurePass123!',
-    fullName: 'Test User',
-    role: 'recruiter',
-  };
-
-  const response = await request(app).post('/api/v1/auth/register').send(payload).expect(400);
-
-  expect(response.body.success).toBe(false);
-  expect(response.body.error.details[0].field).toBe('email');
-});
-```
-
-#### Test Case 1.4: Weak password
-
-```typescript
-it('should return 400 for weak password', async () => {
-  const payload = {
-    email: 'user@example.com',
-    password: 'weak',
-    fullName: 'Test User',
-    role: 'recruiter',
-  };
-
-  const response = await request(app).post('/api/v1/auth/register').send(payload).expect(400);
-
-  expect(response.body.error.details[0].field).toBe('password');
-});
-```
-
----
-
-### Test Suite: POST /auth/login
-
-#### Test Case 2.1: Successful login
-
-```typescript
-describe('POST /auth/login', () => {
-  it('should login successfully with valid credentials', async () => {
-    const payload = {
-      email: 'user@example.com',
-      password: 'SecurePass123!',
-    };
-
-    const response = await request(app).post('/api/v1/auth/login').send(payload).expect(200);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.user.email).toBe(payload.email);
-    expect(response.body.data.accessToken).toBeDefined();
-    expect(response.body.data.refreshToken).toBeDefined();
-  });
-});
-```
-
-#### Test Case 2.2: Invalid credentials
-
-```typescript
-it('should return 401 for invalid password', async () => {
-  const payload = {
-    email: 'user@example.com',
-    password: 'WrongPassword123!',
-  };
-
-  const response = await request(app).post('/api/v1/auth/login').send(payload).expect(401);
-
-  expect(response.body.success).toBe(false);
-  expect(response.body.error.code).toBe('INVALID_CREDENTIALS');
-});
-```
-
-#### Test Case 2.3: Non-existent user
-
-```typescript
-it('should return 401 for non-existent user', async () => {
-  const payload = {
-    email: 'nonexistent@example.com',
-    password: 'SecurePass123!',
-  };
-
-  const response = await request(app).post('/api/v1/auth/login').send(payload).expect(401);
-
-  expect(response.body.error.code).toBe('INVALID_CREDENTIALS');
-});
-```
-
----
-
-### Test Suite: POST /auth/refresh
-
-#### Test Case 3.1: Successful token refresh
-
-```typescript
-describe('POST /auth/refresh', () => {
-  it('should refresh access token successfully', async () => {
-    const loginResponse = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ email: 'user@example.com', password: 'SecurePass123!' });
-
-    const refreshToken = loginResponse.body.data.refreshToken;
-
-    const response = await request(app)
-      .post('/api/v1/auth/refresh')
-      .send({ refreshToken })
-      .expect(200);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.accessToken).toBeDefined();
-  });
-});
-```
-
-#### Test Case 3.2: Invalid refresh token
-
-```typescript
-it('should return 401 for invalid refresh token', async () => {
-  const response = await request(app)
-    .post('/api/v1/auth/refresh')
-    .send({ refreshToken: 'invalid-token' })
-    .expect(401);
-
-  expect(response.body.success).toBe(false);
-});
-```
-
----
-
-### Test Suite: POST /auth/register/guest
-
-#### Test Case 1.5: Successful guest registration
-
-```typescript
-describe('POST /auth/register/guest', () => {
-  it('should register a new guest successfully', async () => {
-    const payload = {
-      fullName: 'Guest User',
-      fingerprint: 'test-fingerprint-abc123',
-    };
-
-    const response = await request(app)
-      .post('/api/v1/auth/register/guest')
-      .send(payload)
-      .expect(201);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.user.fullName).toBe(payload.fullName);
-    expect(response.body.data.user.email).toBeNull();
-    expect(response.body.data.user.role).toBe('recruiter');
-    expect(response.body.data.accessToken).toBeDefined();
-    expect(response.body.data.refreshToken).toBeDefined();
-    expect(response.body.data.user.password).toBeUndefined();
-    expect(response.body.data.user.fingerprint).toBeUndefined();
-  });
-});
-```
-
-#### Test Case 1.6: Duplicate fingerprint
-
-```typescript
-it('should return 400 for duplicate fingerprint', async () => {
-  const payload = {
-    fullName: 'Guest User',
-    fingerprint: 'duplicate-fingerprint',
-  };
-
-  await request(app).post('/api/v1/auth/register/guest').send(payload);
-
-  const response = await request(app).post('/api/v1/auth/register/guest').send(payload).expect(400);
-
-  expect(response.body.success).toBe(false);
-  expect(response.body.error.code).toBe('VALIDATION_ERROR');
-  expect(response.body.error.details[0].field).toBe('fingerprint');
-});
-```
-
-#### Test Case 1.7: Missing fullName
-
-```typescript
-it('should return 400 for missing fullName', async () => {
-  const response = await request(app)
-    .post('/api/v1/auth/register/guest')
-    .send({ fingerprint: 'some-fingerprint' })
-    .expect(400);
-
-  expect(response.body.success).toBe(false);
-  expect(response.body.error.details[0].field).toBe('fullName');
-});
-```
-
-#### Test Case 1.8: Missing fingerprint
-
-```typescript
-it('should return 400 for missing fingerprint', async () => {
-  const response = await request(app)
-    .post('/api/v1/auth/register/guest')
-    .send({ fullName: 'Guest User' })
-    .expect(400);
-
-  expect(response.body.success).toBe(false);
-  expect(response.body.error.details[0].field).toBe('fingerprint');
-});
-```
-
-#### Test Case 1.9: fullName too short
-
-```typescript
-it('should return 400 for fullName too short', async () => {
-  const response = await request(app)
-    .post('/api/v1/auth/register/guest')
-    .send({ fullName: 'A', fingerprint: 'some-fingerprint' })
-    .expect(400);
-
-  expect(response.body.error.details[0].field).toBe('fullName');
-});
-```
-
----
-
-### Test Suite: POST /auth/login/guest
-
-#### Test Case 2.4: Successful guest login
-
-```typescript
-describe('POST /auth/login/guest', () => {
-  beforeEach(async () => {
-    await request(app)
-      .post('/api/v1/auth/register/guest')
-      .send({ fullName: 'Guest User', fingerprint: 'login-fingerprint-xyz789' });
-  });
-
-  it('should login guest successfully with valid fingerprint', async () => {
-    const response = await request(app)
-      .post('/api/v1/auth/login/guest')
-      .send({ fingerprint: 'login-fingerprint-xyz789' })
-      .expect(200);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.user.fullName).toBe('Guest User');
-    expect(response.body.data.user.email).toBeNull();
-    expect(response.body.data.accessToken).toBeDefined();
-    expect(response.body.data.refreshToken).toBeDefined();
-    expect(response.body.data.user.fingerprint).toBeUndefined();
-  });
-});
-```
-
-#### Test Case 2.5: Unknown fingerprint
-
-```typescript
-it('should return 401 for unknown fingerprint', async () => {
-  const response = await request(app)
-    .post('/api/v1/auth/login/guest')
-    .send({ fingerprint: 'non-existent-fingerprint' })
-    .expect(401);
-
-  expect(response.body.success).toBe(false);
-  expect(response.body.error.code).toBe('UNAUTHORIZED');
-});
-```
-
-#### Test Case 2.6: Missing fingerprint
-
-```typescript
-it('should return 400 for missing fingerprint', async () => {
-  const response = await request(app).post('/api/v1/auth/login/guest').send({}).expect(400);
-
-  expect(response.body.success).toBe(false);
-  expect(response.body.error.details[0].field).toBe('fingerprint');
-});
-```
-
-#### Test Case 2.7: Guest login issues new tokens each time
-
-```typescript
-it('should issue new tokens on each guest login', async () => {
-  const first = await request(app)
-    .post('/api/v1/auth/login/guest')
-    .send({ fingerprint: 'login-fingerprint-xyz789' });
-
-  await new Promise((r) => setTimeout(r, 1100));
-
-  const second = await request(app)
-    .post('/api/v1/auth/login/guest')
-    .send({ fingerprint: 'login-fingerprint-xyz789' });
-
-  expect(first.body.data.accessToken).not.toBe(second.body.data.accessToken);
-  expect(first.body.data.refreshToken).not.toBe(second.body.data.refreshToken);
-});
-```
-
-#### Test Case 2.8: Guest refresh token is usable
-
-```typescript
-it('new guest refresh token should be usable', async () => {
-  const loginRes = await request(app)
-    .post('/api/v1/auth/login/guest')
-    .send({ fingerprint: 'login-fingerprint-xyz789' });
-
-  const { refreshToken } = loginRes.body.data;
-
-  const response = await request(app)
-    .post('/api/v1/auth/refresh')
-    .send({ refreshToken })
-    .expect(200);
-
-  expect(response.body.data.accessToken).toBeDefined();
-});
-```
-
----
-
-### Test Suite: POST /auth/login (guest rejection)
-
-#### Test Case 2.9: Guest account rejected at regular login
-
-```typescript
-describe('POST /auth/login (guest rejection)', () => {
-  it('should return 401 when guest account tries to login via regular login', async () => {
-    await request(app)
-      .post('/api/v1/auth/register/guest')
-      .send({ fullName: 'Guest', fingerprint: 'reject-fingerprint-001' });
-
-    const response = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ email: 'anything@example.com', password: 'SecurePass123!' })
-      .expect(401);
-
-    expect(response.body.success).toBe(false);
-    expect(response.body.error.code).toBe('UNAUTHORIZED');
-  });
-});
-```
-
----
-
-## Meeting Tests
-
-### Test Suite: GET /meetings
-
-#### Test Case 4.1: Get meetings with pagination
-
-```typescript
-describe('GET /meetings', () => {
-  it('should return paginated meetings', async () => {
-    const response = await request(app)
-      .get('/api/v1/meetings?page=1&limit=10')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .expect(200);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.meetings).toBeInstanceOf(Array);
-    expect(response.body.data.pagination.currentPage).toBe(1);
-    expect(response.body.data.pagination.itemsPerPage).toBe(10);
-  });
-});
-```
-
-#### Test Case 4.2: Filter by status
-
-```typescript
-it('should filter meetings by status', async () => {
-  const response = await request(app)
-    .get('/api/v1/meetings?status=confirmed')
-    .set('Authorization', `Bearer ${accessToken}`)
-    .expect(200);
-
-  expect(response.body.data.meetings.every((m) => m.status === 'confirmed')).toBe(true);
-});
-```
-
-#### Test Case 4.3: Search by candidate name
-
-```typescript
-it('should search meetings by candidate name', async () => {
-  const response = await request(app)
-    .get('/api/v1/meetings?search=Alice')
-    .set('Authorization', `Bearer ${accessToken}`)
-    .expect(200);
-
-  expect(response.body.data.meetings.length).toBeGreaterThan(0);
-  expect(response.body.data.meetings[0].candidateName).toContain('Alice');
-});
-```
-
-#### Test Case 4.4: Unauthorized access
-
-```typescript
-it('should return 401 without authentication', async () => {
-  const response = await request(app).get('/api/v1/meetings').expect(401);
-
-  expect(response.body.error.code).toBe('UNAUTHORIZED');
-});
-```
-
----
-
-### Test Suite: POST /meetings
-
-#### Test Case 5.1: Create meeting successfully
-
-```typescript
-describe('POST /meetings', () => {
-  it('should create a new meeting', async () => {
-    const payload = {
-      candidateName: 'Bob Smith',
-      position: 'Backend Developer',
-      startTime: '2026-04-01T10:00:00Z',
-      endTime: '2026-04-01T11:00:00Z',
-      meetingType: 'online',
-      platform: 'zoom',
-      notes: 'Technical interview',
-    };
-
-    const response = await request(app)
-      .post('/api/v1/meetings')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send(payload)
-      .expect(201);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.candidateName).toBe(payload.candidateName);
-    expect(response.body.data.status).toBe('pending');
-  });
-});
-```
-
-#### Test Case 5.2: Invalid time range
-
-```typescript
-it('should return 400 for end time before start time', async () => {
-  const payload = {
-    candidateName: 'Bob Smith',
-    position: 'Backend Developer',
-    startTime: '2026-04-01T11:00:00Z',
-    endTime: '2026-04-01T10:00:00Z',
-    meetingType: 'online',
-    platform: 'zoom',
-  };
-
-  const response = await request(app)
-    .post('/api/v1/meetings')
-    .set('Authorization', `Bearer ${accessToken}`)
-    .send(payload)
-    .expect(400);
-
-  expect(response.body.error.code).toBe('VALIDATION_ERROR');
-});
-```
-
-#### Test Case 5.3: Past date validation
-
-```typescript
-it('should return 400 for past start time', async () => {
-  const payload = {
-    candidateName: 'Bob Smith',
-    position: 'Backend Developer',
-    startTime: '2020-01-01T10:00:00Z',
-    endTime: '2020-01-01T11:00:00Z',
-    meetingType: 'online',
-    platform: 'zoom',
-  };
-
-  const response = await request(app)
-    .post('/api/v1/meetings')
-    .set('Authorization', `Bearer ${accessToken}`)
-    .send(payload)
-    .expect(400);
-});
-```
-
-#### Test Case 5.4: Missing required fields
-
-```typescript
-it('should return 400 for missing required fields', async () => {
-  const payload = {
-    candidateName: 'Bob Smith',
-  };
-
-  const response = await request(app)
-    .post('/api/v1/meetings')
-    .set('Authorization', `Bearer ${accessToken}`)
-    .send(payload)
-    .expect(400);
-
-  expect(response.body.error.details.length).toBeGreaterThan(0);
-});
-```
-
----
-
-### Test Suite: PUT /meetings/:id
-
-#### Test Case 6.1: Update meeting successfully
-
-```typescript
-describe('PUT /meetings/:id', () => {
-  it('should update meeting details', async () => {
-    const meetingId = '507f1f77bcf86cd799439011';
-    const payload = {
-      status: 'confirmed',
-      notes: 'Updated notes',
-    };
-
-    const response = await request(app)
-      .put(`/api/v1/meetings/${meetingId}`)
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send(payload)
-      .expect(200);
-
-    expect(response.body.data.status).toBe('confirmed');
-    expect(response.body.data.notes).toBe('Updated notes');
-  });
-});
-```
-
-#### Test Case 6.2: Update non-existent meeting
-
-```typescript
-it('should return 404 for non-existent meeting', async () => {
-  const response = await request(app)
-    .put('/api/v1/meetings/507f1f77bcf86cd799439999')
-    .set('Authorization', `Bearer ${accessToken}`)
-    .send({ status: 'confirmed' })
-    .expect(404);
-
-  expect(response.body.error.code).toBe('MEETING_NOT_FOUND');
-});
-```
-
-#### Test Case 6.3: Unauthorized update
-
-```typescript
-it("should return 403 when updating another user's meeting", async () => {
-  const meetingId = '507f1f77bcf86cd799439011';
-
-  const response = await request(app)
-    .put(`/api/v1/meetings/${meetingId}`)
-    .set('Authorization', `Bearer ${otherUserToken}`)
-    .send({ status: 'confirmed' })
-    .expect(403);
-
-  expect(response.body.error.code).toBe('FORBIDDEN');
-});
-```
-
----
-
-### Test Suite: DELETE /meetings/:id
-
-#### Test Case 7.1: Delete meeting successfully
-
-```typescript
-describe('DELETE /meetings/:id', () => {
-  it('should delete meeting', async () => {
-    const meetingId = '507f1f77bcf86cd799439011';
-
-    const response = await request(app)
-      .delete(`/api/v1/meetings/${meetingId}`)
-      .set('Authorization', `Bearer ${accessToken}`)
-      .expect(200);
-
-    expect(response.body.success).toBe(true);
-
-    await request(app)
-      .get(`/api/v1/meetings/${meetingId}`)
-      .set('Authorization', `Bearer ${accessToken}`)
-      .expect(404);
-  });
-});
-```
-
-#### Test Case 7.2: Delete non-existent meeting
-
-```typescript
-it('should return 404 for non-existent meeting', async () => {
-  const response = await request(app)
-    .delete('/api/v1/meetings/507f1f77bcf86cd799439999')
-    .set('Authorization', `Bearer ${accessToken}`)
-    .expect(404);
-});
-```
-
----
-
-### Test Suite: POST /meetings/:id/feedback
-
-#### Test Case 8.1: Add feedback successfully
-
-```typescript
-describe('POST /meetings/:id/feedback', () => {
-  it('should add feedback to meeting', async () => {
-    const meetingId = '507f1f77bcf86cd799439011';
-    const payload = {
-      comment: 'Excellent technical skills and communication',
-      rating: 5,
-    };
-
-    const response = await request(app)
-      .post(`/api/v1/meetings/${meetingId}/feedback`)
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send(payload)
-      .expect(201);
-
-    expect(response.body.data.comment).toBe(payload.comment);
-    expect(response.body.data.rating).toBe(payload.rating);
-  });
-});
-```
-
-#### Test Case 8.2: Invalid rating
-
-```typescript
-it('should return 400 for invalid rating', async () => {
-  const meetingId = '507f1f77bcf86cd799439011';
-  const payload = {
-    comment: 'Good candidate',
-    rating: 6,
-  };
-
-  const response = await request(app)
-    .post(`/api/v1/meetings/${meetingId}/feedback`)
-    .set('Authorization', `Bearer ${accessToken}`)
-    .send(payload)
-    .expect(400);
-});
-```
-
----
-
-## Integration Tests
-
-### Test Case 9.1: Complete user flow
-
-```typescript
-describe('Integration: Complete Meeting Flow', () => {
-  it('should complete full meeting lifecycle', async () => {
-    let accessToken, meetingId;
-
-    const registerRes = await request(app).post('/api/v1/auth/register').send({
-      email: 'integration@example.com',
-      password: 'SecurePass123!',
-      fullName: 'Integration Test',
-      role: 'recruiter',
-    });
-
-    accessToken = registerRes.body.data.accessToken;
-
-    const createRes = await request(app)
-      .post('/api/v1/meetings')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        candidateName: 'Test Candidate',
-        position: 'Software Engineer',
-        startTime: '2026-05-01T10:00:00Z',
-        endTime: '2026-05-01T11:00:00Z',
-        meetingType: 'online',
-        platform: 'zoom',
-      });
-
-    meetingId = createRes.body.data.id;
-    expect(createRes.status).toBe(201);
-
-    const updateRes = await request(app)
-      .put(`/api/v1/meetings/${meetingId}`)
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({ status: 'confirmed' });
-
-    expect(updateRes.body.data.status).toBe('confirmed');
-
-    const feedbackRes = await request(app)
-      .post(`/api/v1/meetings/${meetingId}/feedback`)
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        comment: 'Great interview',
-        rating: 5,
-      });
-
-    expect(feedbackRes.status).toBe(201);
-
-    const deleteRes = await request(app)
-      .delete(`/api/v1/meetings/${meetingId}`)
-      .set('Authorization', `Bearer ${accessToken}`);
-
-    expect(deleteRes.status).toBe(200);
-  });
-});
-```
-
----
-
-## E2E Test Scenarios
-
-### Scenario 1: Recruiter schedules and manages interviews
-
-```typescript
-describe('E2E: Recruiter Interview Management', () => {
-  it('should allow recruiter to manage complete interview process', async () => {
-    // 1. Login as recruiter
-    // 2. Create multiple meetings
-    // 3. View dashboard with filters
-    // 4. Update meeting status
-    // 5. Add feedback
-    // 6. Search for specific candidate
-    // 7. Delete cancelled meeting
-  });
-});
-```
-
-### Scenario 2: Multiple users concurrent access
-
-```typescript
-describe('E2E: Concurrent User Access', () => {
-  it('should handle multiple users accessing same meeting', async () => {
-    // 1. Create meeting as recruiter
-    // 2. Login as interviewer
-    // 3. Both users view same meeting
-    // 4. Interviewer adds feedback
-    // 5. Recruiter updates status
-    // 6. Verify both see updated data
-  });
-});
-```
-
----
-
-## Test Coverage Requirements
-
-### Unit Tests
-
-- **Target**: > 80% code coverage
-- **Scope**: All services, utilities, validators
-- **Mock**: External dependencies (database, external APIs)
-
-### Integration Tests
-
-- **Target**: All API endpoints
-- **Scope**: Request/response validation, database operations
-- **Environment**: Test database with fixtures
-
-### E2E Tests
-
-- **Target**: Critical user journeys
-- **Scope**: Complete workflows from login to logout
-- **Environment**: Isolated test environment
-
----
-
-## Test Setup
-
-### Prerequisites
-
-```typescript
-import request from 'supertest';
-import { app } from '../src/app';
-import { connectDB, disconnectDB } from '../src/config/database';
-import { User } from '../src/models/User';
-import { Meeting } from '../src/models/Meeting';
-
-beforeAll(async () => {
-  await connectDB();
-});
-
-afterAll(async () => {
+// tests/helpers/db.ts
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import mongoose from 'mongoose';
+import { connectDB, disconnectDB } from '../../src/config/database';
+
+let mongoServer: MongoMemoryServer;
+
+export async function setupTestDB(): Promise<void> {
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
+  await connectDB(uri);
+}
+
+export async function teardownTestDB(): Promise<void> {
   await disconnectDB();
-});
+  await mongoServer.stop();
+}
 
-beforeEach(async () => {
-  await User.deleteMany({});
-  await Meeting.deleteMany({});
-});
+export async function clearDB(): Promise<void> {
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    await collections[key].drop().catch(() => {});
+  }
+}
 ```
 
 ### Test Fixtures
 
 ```typescript
-export const testUsers = {
-  recruiter: {
-    email: 'recruiter@example.com',
-    password: 'SecurePass123!',
-    fullName: 'Test Recruiter',
-    role: 'recruiter',
-  },
-  interviewer: {
-    email: 'interviewer@example.com',
-    password: 'SecurePass123!',
-    fullName: 'Test Interviewer',
-    role: 'interviewer',
-  },
-  guest: {
-    fullName: 'Test Guest',
-    fingerprint: 'test-guest-fingerprint-fixture',
-  },
+const validUser = {
+  email: 'test@example.com',
+  password: 'SecurePass123!',
+  fullName: 'Test User',
+  role: 'recruiter',
 };
 
-export const testMeetings = {
-  upcoming: {
-    candidateName: 'Alice Johnson',
-    position: 'Software Engineer',
-    startTime: new Date(Date.now() + 86400000),
-    endTime: new Date(Date.now() + 90000000),
-    meetingType: 'online',
-    platform: 'zoom',
-  },
+const validGuest = {
+  fullName: 'Guest User',
+  fingerprint: 'test-fingerprint-abc123',
+};
+
+const validMeeting = () => ({
+  title: 'Interview Meeting',
+  candidateName: 'Alice Smith',
+  position: 'Software Engineer',
+  startTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  endTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+  meetingType: 'online',
+  platform: 'Zoom',
+});
+
+const validFeedback = {
+  topic: 'Technical Skills',
+  comment: 'Great candidate with excellent technical skills',
+  rating: 5,
 };
 ```
 
 ---
 
-**Document Version**: 1.1  
-**Last Updated**: March 7, 2026
+## Authentication Tests
+
+### Test Suite: POST /api/v1/auth/register
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| 1.1 | Successful user registration | 201 | Integration |
+| 1.2 | Duplicate email registration | 400 VALIDATION_ERROR | Integration |
+| 1.3 | Invalid email format | 400 details[].field=email | Integration |
+| 1.4 | Weak password | 400 details[].field=password | Integration |
+
+#### 1.1: Successful user registration
+
+```typescript
+it('should register a new user successfully', async () => {
+  const res = await request(app).post('/api/v1/auth/register').send(validUser).expect(201);
+
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.user.email).toBe(validUser.email);
+  expect(res.body.data.user.fullName).toBe(validUser.fullName);
+  expect(res.body.data.user.role).toBe(validUser.role);
+  expect(res.body.data.accessToken).toBeDefined();
+  expect(res.body.data.refreshToken).toBeDefined();
+  expect(res.body.data.user.password).toBeUndefined();
+});
+```
+
+#### 1.2: Duplicate email registration
+
+```typescript
+it('should return 400 for duplicate email', async () => {
+  await request(app).post('/api/v1/auth/register').send(validUser);
+  const res = await request(app).post('/api/v1/auth/register').send(validUser).expect(400);
+
+  expect(res.body.success).toBe(false);
+  expect(res.body.error.code).toBe('VALIDATION_ERROR');
+});
+```
+
+#### 1.3: Invalid email format
+
+```typescript
+it('should return 400 for invalid email format', async () => {
+  const res = await request(app)
+    .post('/api/v1/auth/register')
+    .send({ ...validUser, email: 'invalid-email' })
+    .expect(400);
+
+  expect(res.body.success).toBe(false);
+  expect(res.body.error.details[0].field).toBe('email');
+});
+```
+
+#### 1.4: Weak password
+
+```typescript
+it('should return 400 for weak password', async () => {
+  const res = await request(app)
+    .post('/api/v1/auth/register')
+    .send({ ...validUser, password: 'weak' })
+    .expect(400);
+
+  expect(res.body.error.details[0].field).toBe('password');
+});
+```
+
+---
+
+### Test Suite: POST /api/v1/auth/login
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| 2.1 | Successful login | 200 | Integration |
+| 2.2 | Wrong password | 401 UNAUTHORIZED | Integration |
+| 2.3 | Non-existent user | 401 UNAUTHORIZED | Integration |
+
+#### 2.1: Successful login
+
+```typescript
+it('should login successfully with valid credentials', async () => {
+  const res = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email: validUser.email, password: validUser.password })
+    .expect(200);
+
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.user.email).toBe(validUser.email);
+  expect(res.body.data.accessToken).toBeDefined();
+  expect(res.body.data.refreshToken).toBeDefined();
+});
+```
+
+#### 2.2: Wrong password
+
+```typescript
+it('should return 401 for wrong password', async () => {
+  const res = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email: validUser.email, password: 'WrongPassword123!' })
+    .expect(401);
+
+  expect(res.body.success).toBe(false);
+  expect(res.body.error.code).toBe('UNAUTHORIZED');
+});
+```
+
+#### 2.3: Non-existent user
+
+```typescript
+it('should return 401 for non-existent user', async () => {
+  const res = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email: 'nonexistent@example.com', password: 'SecurePass123!' })
+    .expect(401);
+
+  expect(res.body.error.code).toBe('UNAUTHORIZED');
+});
+```
+
+---
+
+### Test Suite: POST /api/v1/auth/refresh
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| 3.1 | Successful token refresh | 200 | Integration + Unit |
+| 3.2 | Invalid refresh token | 401 | Integration + Unit |
+
+#### 3.1: Successful token refresh
+
+```typescript
+it('should refresh access token successfully', async () => {
+  const loginRes = await request(app).post('/api/v1/auth/register').send(validUser);
+  const { refreshToken } = loginRes.body.data;
+
+  const res = await request(app).post('/api/v1/auth/refresh').send({ refreshToken }).expect(200);
+
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.accessToken).toBeDefined();
+});
+```
+
+#### 3.2: Invalid refresh token
+
+```typescript
+it('should return 401 for invalid refresh token', async () => {
+  const res = await request(app)
+    .post('/api/v1/auth/refresh')
+    .send({ refreshToken: 'invalid-token' })
+    .expect(401);
+
+  expect(res.body.success).toBe(false);
+});
+```
+
+---
+
+### Test Suite: POST /api/v1/auth/register/guest
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| 4.1 | Successful guest registration | 201 | Integration + Unit |
+| 4.2 | Duplicate fingerprint | 400 VALIDATION_ERROR | Integration + Unit |
+| 4.3 | Missing fullName | 400 details[].field=fullName | Integration |
+| 4.4 | Missing fingerprint | 400 details[].field=fingerprint | Integration |
+| 4.5 | fullName too short | 400 details[].field=fullName | Integration |
+| 4.6 | Guest created without password | password=null | Unit |
+
+#### 4.1: Successful guest registration
+
+```typescript
+it('should register a new guest successfully', async () => {
+  const res = await request(app).post('/api/v1/auth/register/guest').send(validGuest).expect(201);
+
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.user.fullName).toBe(validGuest.fullName);
+  expect(res.body.data.user.email).toBeNull();
+  expect(res.body.data.user.role).toBe('recruiter');
+  expect(res.body.data.accessToken).toBeDefined();
+  expect(res.body.data.refreshToken).toBeDefined();
+  expect(res.body.data.user.password).toBeUndefined();
+  expect(res.body.data.user.fingerprint).toBeUndefined();
+});
+```
+
+#### 4.2: Duplicate fingerprint
+
+```typescript
+it('should return 400 for duplicate fingerprint', async () => {
+  await request(app).post('/api/v1/auth/register/guest').send(validGuest);
+  const res = await request(app).post('/api/v1/auth/register/guest').send(validGuest).expect(400);
+
+  expect(res.body.success).toBe(false);
+  expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  expect(res.body.error.details[0].field).toBe('fingerprint');
+});
+```
+
+---
+
+### Test Suite: POST /api/v1/auth/login/guest
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| 5.1 | Successful guest login | 200 | Integration + Unit |
+| 5.2 | Unknown fingerprint | 401 UNAUTHORIZED | Integration + Unit |
+| 5.3 | Missing fingerprint | 400 details[].field=fingerprint | Integration |
+| 5.4 | New tokens on each login | tokens differ | Integration |
+| 5.5 | Guest refresh token usable | 200 | Integration |
+| 5.6 | Refresh tokens capped at 5 | length <= 5 | Unit |
+
+#### 5.1: Successful guest login
+
+```typescript
+it('should login guest successfully with valid fingerprint', async () => {
+  const res = await request(app)
+    .post('/api/v1/auth/login/guest')
+    .send({ fingerprint: validGuest.fingerprint })
+    .expect(200);
+
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.user.fullName).toBe(validGuest.fullName);
+  expect(res.body.data.user.email).toBeNull();
+  expect(res.body.data.accessToken).toBeDefined();
+  expect(res.body.data.refreshToken).toBeDefined();
+  expect(res.body.data.user.fingerprint).toBeUndefined();
+});
+```
+
+#### 5.6: Refresh tokens capped at 5 (Unit)
+
+```typescript
+it('should cap refresh tokens at 5', async () => {
+  for (let i = 0; i < 6; i++) {
+    await loginGuest({ fingerprint: validGuest.fingerprint });
+  }
+  const user = await User.findOne({ userType: 'guest' });
+  expect(user?.refreshTokens.length).toBeLessThanOrEqual(5);
+});
+```
+
+---
+
+### Test Suite: POST /api/v1/auth/login (guest rejection)
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| 6.1 | Guest can't use regular login (null email) | 401 | Integration |
+| 6.2 | Guest must use /login/guest endpoint | 200 | Integration |
+
+#### 6.1: Guest can't use regular login
+
+```typescript
+it('should return 401 when guest tries to login via regular login (guest has no email/password)', async () => {
+  const guestRes = await request(app)
+    .post('/api/v1/auth/register/guest')
+    .send({ fullName: 'Guest', fingerprint: 'reject-fingerprint-001' });
+
+  expect(guestRes.body.data.user.email).toBeNull();
+
+  const res = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email: 'anything@example.com', password: 'SecurePass123!' })
+    .expect(401);
+
+  expect(res.body.success).toBe(false);
+  expect(res.body.error.code).toBe('UNAUTHORIZED');
+});
+```
+
+---
+
+### Test Suite: POST /api/v1/auth/logout
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| 7.1 | Successful logout | 200 | Integration + Unit |
+| 7.2 | Refresh token invalidated after logout | 401 on refresh | Integration + Unit |
+| 7.3 | 401 without auth token | 401 | Integration |
+
+#### 7.2: Refresh token invalidated after logout
+
+```typescript
+it('should invalidate refresh token after logout', async () => {
+  const registerRes = await request(app).post('/api/v1/auth/register').send(validUser);
+  const { accessToken, refreshToken } = registerRes.body.data;
+
+  await request(app)
+    .post('/api/v1/auth/logout')
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send({ refreshToken })
+    .expect(200);
+
+  const res = await request(app)
+    .post('/api/v1/auth/refresh')
+    .send({ refreshToken })
+    .expect(401);
+
+  expect(res.body.success).toBe(false);
+});
+```
+
+---
+
+### Test Suite: GET /api/v1/auth/me
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| 8.1 | Return authenticated user info | 200 | Integration + Unit |
+| 8.2 | Return guest user info | 200 | Integration + Unit |
+| 8.3 | 401 without authentication | 401 | Integration |
+| 8.4 | 401 with invalid token | 401 | Integration |
+| 8.5 | UnauthorizedError for non-existent userId | throws | Unit |
+
+#### 8.1: Return authenticated user info
+
+```typescript
+it('should return current user info for authenticated user', async () => {
+  const registerRes = await request(app).post('/api/v1/auth/register').send(validUser);
+  const { accessToken } = registerRes.body.data;
+
+  const res = await request(app)
+    .get('/api/v1/auth/me')
+    .set('Authorization', `Bearer ${accessToken}`)
+    .expect(200);
+
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.user.email).toBe(validUser.email);
+  expect(res.body.data.user.fullName).toBe(validUser.fullName);
+  expect(res.body.data.user.role).toBe(validUser.role);
+  expect(res.body.data.user.userType).toBe('user');
+});
+```
+
+#### 8.2: Return guest user info
+
+```typescript
+it('should return guest user info', async () => {
+  const guestRes = await request(app)
+    .post('/api/v1/auth/register/guest')
+    .send({ fullName: 'Guest User', fingerprint: 'me-endpoint-fingerprint' });
+  const { accessToken } = guestRes.body.data;
+
+  const res = await request(app)
+    .get('/api/v1/auth/me')
+    .set('Authorization', `Bearer ${accessToken}`)
+    .expect(200);
+
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.user.email).toBeNull();
+  expect(res.body.data.user.fullName).toBe('Guest User');
+  expect(res.body.data.user.userType).toBe('guest');
+});
+```
+
+---
+
+## Auth Unit Tests (Service Layer)
+
+### register service
+
+| # | Test Case | Method |
+|---|-----------|--------|
+| U1.1 | Create user and return tokens | Unit |
+| U1.2 | Hash the password (bcrypt) | Unit |
+| U1.3 | Throw ValidationError for duplicate email | Unit |
+
+### login service
+
+| # | Test Case | Method |
+|---|-----------|--------|
+| U2.1 | Return tokens for valid credentials | Unit |
+| U2.2 | Throw UnauthorizedError for wrong password | Unit |
+| U2.3 | Throw UnauthorizedError for non-existent user | Unit |
+
+### getMe service
+
+| # | Test Case | Method |
+|---|-----------|--------|
+| U3.1 | Return user info for valid userId | Unit |
+| U3.2 | Return guest user info | Unit |
+| U3.3 | Throw UnauthorizedError for non-existent userId | Unit |
+
+---
+
+## Meeting Tests
+
+### Test Suite: POST /api/v1/meetings
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| M1.1 | Create meeting for authenticated user | 201 | Integration + Unit |
+| M1.2 | 401 without authentication | 401 | Integration |
+| M1.3 | 400 for missing required fields (title, candidateName, etc.) | 400 | Integration |
+| M1.4 | 400 when endTime is before startTime | 400 details[].field=endTime | Integration |
+| M1.5 | 400 when startTime is in the past | 400 details[].field=startTime | Integration |
+| M1.6 | 400 for online meeting without platform | 400 details[].field=platform | Integration |
+| M1.7 | Allow onsite meeting without platform | 201 | Integration |
+| M1.8 | Always set status to pending on create | status=pending | Integration + Unit |
+| M1.9 | Store startTime and endTime as Dates | instanceof Date | Unit |
+
+#### M1.1: Create meeting
+
+```typescript
+it('should create a meeting for authenticated user', async () => {
+  const { accessToken } = await registerAndLogin();
+
+  const res = await request(app)
+    .post('/api/v1/meetings')
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send(validMeeting())
+    .expect(201);
+
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.candidateName).toBe('Alice Smith');
+  expect(res.body.data.status).toBe('pending');
+});
+```
+
+---
+
+### Test Suite: GET /api/v1/meetings
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| M2.1 | Return paginated list of meetings | 200 | Integration + Unit |
+| M2.2 | Paginate with page and limit params | hasNext/hasPrev | Integration + Unit |
+| M2.3 | Filter by status | filtered results | Integration + Unit |
+| M2.4 | 401 without authentication | 401 | Integration |
+| M2.5 | 400 for invalid query params (page=abc) | 400 | Integration |
+| M2.6 | 400 for invalid status filter | 400 | Integration |
+| M2.7 | Default page=1 and limit=10 | pagination defaults | Unit |
+
+#### Response format
+
+```typescript
+// GET /api/v1/meetings?page=1&limit=2
+{
+  success: true,
+  data: [...],           // array of meetings
+  pagination: {
+    total: 3,
+    page: 1,
+    limit: 2,
+    totalPages: 2,
+    hasNext: true,
+    hasPrev: false,
+  }
+}
+```
+
+---
+
+### Test Suite: GET /api/v1/meetings/:id
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| M3.1 | Return meeting by id (with populated createdBy) | 200 | Integration + Unit |
+| M3.2 | 404 for non-existent meeting | 404 MEETING_NOT_FOUND | Integration + Unit |
+| M3.3 | 401 without authentication | 401 | Integration |
+| M3.4 | Throw for invalid id format | throws | Unit |
+
+---
+
+### Test Suite: PUT /api/v1/meetings/:id
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| M4.1 | Update meeting for owner | 200 | Integration + Unit |
+| M4.2 | Allow admin to update any meeting | 200 | Integration + Unit |
+| M4.3 | 403 when non-owner tries to update | 403 FORBIDDEN | Integration + Unit |
+| M4.4 | 404 for non-existent meeting | 404 MEETING_NOT_FOUND | Integration + Unit |
+| M4.5 | 401 without authentication | 401 | Integration |
+| M4.6 | Update startTime/endTime as Dates | instanceof Date | Unit |
+
+---
+
+### Test Suite: DELETE /api/v1/meetings/:id
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| M5.1 | Delete meeting for owner | 200 | Integration + Unit |
+| M5.2 | Allow admin to delete any meeting | 200 | Integration + Unit |
+| M5.3 | 403 when non-owner tries to delete | 403 FORBIDDEN | Integration + Unit |
+| M5.4 | 404 for non-existent meeting | 404 MEETING_NOT_FOUND | Integration + Unit |
+| M5.5 | 401 without authentication | 401 | Integration |
+
+#### M5.1: Delete meeting
+
+```typescript
+it('should delete meeting for owner', async () => {
+  const { accessToken } = await registerAndLogin();
+  const createRes = await request(app)
+    .post('/api/v1/meetings')
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send(validMeeting());
+
+  const id = createRes.body.data.id;
+
+  const res = await request(app)
+    .delete(`/api/v1/meetings/${id}`)
+    .set('Authorization', `Bearer ${accessToken}`)
+    .expect(200);
+
+  expect(res.body.success).toBe(true);
+  expect(res.body.message).toBe('Meeting deleted successfully');
+});
+```
+
+---
+
+### Test Suite: POST /api/v1/meetings/:id/feedback
+
+| # | Test Case | Status | Method |
+|---|-----------|--------|--------|
+| F1.1 | Allow interviewer to add feedback | 201 | Integration + Unit |
+| F1.2 | Allow admin to add feedback | 201 | Unit |
+| F1.3 | Allow recruiter to add feedback | 201 | Integration + Unit |
+| F1.4 | 400 for invalid rating (out of range 1-5) | 400 details[].field=rating | Integration |
+| F1.5 | 400 for missing topic | 400 details[].field=topic | Integration |
+| F1.6 | 404 for non-existent meeting | 404 MEETING_NOT_FOUND | Integration + Unit |
+| F1.7 | 401 without authentication | 401 | Integration |
+| F1.8 | Accumulate multiple feedback entries | feedback.length=2 | Unit |
+
+#### Feedback input format
+
+```typescript
+// topic is required, comment is optional
+const feedback = {
+  topic: 'Technical Skills',        // required, min 1 char, max 200
+  comment: 'Excellent candidate',   // optional, max 2000
+  rating: 5,                        // required, integer 1-5
+};
+```
+
+#### F1.1: Interviewer adds feedback
+
+```typescript
+it('should allow interviewer to add feedback', async () => {
+  const { accessToken: recruiterToken } = await registerAndLogin('recruiter');
+  const { accessToken: interviewerToken } = await registerAndLogin('interviewer');
+
+  const createRes = await request(app)
+    .post('/api/v1/meetings')
+    .set('Authorization', `Bearer ${recruiterToken}`)
+    .send(validMeeting());
+
+  const id = createRes.body.data.id;
+
+  const res = await request(app)
+    .post(`/api/v1/meetings/${id}/feedback`)
+    .set('Authorization', `Bearer ${interviewerToken}`)
+    .send(validFeedback)
+    .expect(201);
+
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.feedback).toHaveLength(1);
+  expect(res.body.data.feedback[0].comment).toBe(validFeedback.comment);
+  expect(res.body.data.feedback[0].rating).toBe(5);
+});
+```
+
+---
+
+## Test Coverage Summary
+
+### Test Files
+
+| File | Type | Tests |
+|------|------|-------|
+| `tests/unit/auth.service.test.ts` | Unit | 14 |
+| `tests/unit/meeting.service.test.ts` | Unit | 21 |
+| `tests/integration/auth.test.ts` | Integration | 27 |
+| `tests/integration/meeting.test.ts` | Integration | 33 |
+| **Total** | | **95 → 105** |
+
+### Coverage Target
+
+- **Unit Tests**: > 80% — All services and utilities
+- **Integration Tests**: All API endpoints covered
+- **E2E Tests**: Critical user journeys (planned)
+
+### Running Tests
+
+```bash
+# From project root
+pnpm test                  # All tests
+pnpm test:api              # Backend only
+pnpm test:api:unit         # Unit tests only
+pnpm test:api:integration  # Integration tests only
+
+# From apps/backend
+pnpm test                  # All backend tests
+pnpm test:unit             # Unit tests only
+pnpm test:integration      # Integration tests only
+```
+
+---
+
+**Document Version**: 2.0
+**Last Updated**: March 8, 2026

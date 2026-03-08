@@ -34,6 +34,8 @@
 ```typescript
 {
   _id: ObjectId,
+  title: string,              // required, 2-200 chars
+  description?: string,       // max 2000 chars
   candidateName: string,      // indexed
   position: string,           // indexed
   startTime: Date,            // indexed
@@ -41,19 +43,22 @@
   meetingType: 'online' | 'onsite',
   platform?: string,          // zoom, google-meet, teams, etc.
   meetingLink?: string,
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed',
-  notes?: string,
+  status: 'pending' | 'confirmed' | 'cancelled',
+  notes?: string,             // max 2000 chars
+  interviewNotes?: string,    // max 5000 chars
   feedback: [
     {
       _id: ObjectId,
       interviewerId: ObjectId,  // ref: users
-      comment: string,
+      topic?: string,           // max 200 chars
+      comment?: string,         // max 2000 chars
       rating: number,           // 1-5
-      createdAt: Date
+      createdAt: Date,
+      updatedAt: Date
     }
   ],
   createdBy: ObjectId,        // ref: users, indexed
-  createdAt: Date,            // indexed
+  createdAt: Date,            // indexed (descending)
   updatedAt: Date
 }
 ```
@@ -124,6 +129,8 @@ users (1) ──── (N) feedback
 ```json
 {
   "_id": "507f1f77bcf86cd799439012",
+  "title": "Technical Interview - Software Engineer",
+  "description": "First-round technical interview",
   "candidateName": "Alice Johnson",
   "position": "Software Engineer",
   "startTime": "2026-03-15T10:00:00Z",
@@ -133,13 +140,16 @@ users (1) ──── (N) feedback
   "meetingLink": "https://zoom.us/j/123456789",
   "status": "confirmed",
   "notes": "Technical interview - focus on algorithms and system design",
+  "interviewNotes": "Candidate showed strong problem-solving skills",
   "feedback": [
     {
       "_id": "507f1f77bcf86cd799439013",
       "interviewerId": "507f1f77bcf86cd799439014",
+      "topic": "Problem Solving",
       "comment": "Excellent problem-solving skills",
       "rating": 5,
-      "createdAt": "2026-03-15T11:05:00Z"
+      "createdAt": "2026-03-15T11:05:00Z",
+      "updatedAt": "2026-03-15T11:05:00Z"
     }
   ],
   "createdBy": "507f1f77bcf86cd799439011",
@@ -227,10 +237,14 @@ const feedbackSchema = new Schema(
       ref: 'User',
       required: true,
     },
+    topic: {
+      type: String,
+      trim: true,
+      maxlength: 200,
+    },
     comment: {
       type: String,
-      required: true,
-      minlength: 10,
+      trim: true,
       maxlength: 2000,
     },
     rating: {
@@ -247,6 +261,18 @@ const feedbackSchema = new Schema(
 
 const meetingSchema = new Schema(
   {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 200,
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+    },
     candidateName: {
       type: String,
       required: true,
@@ -285,13 +311,17 @@ const meetingSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+      enum: ['pending', 'confirmed', 'cancelled'],
       default: 'pending',
       index: true,
     },
     notes: {
       type: String,
       maxlength: 2000,
+    },
+    interviewNotes: {
+      type: String,
+      maxlength: 5000,
     },
     feedback: [feedbackSchema],
     createdBy: {
@@ -311,6 +341,9 @@ meetingSchema.index({ status: 1, startTime: 1 });
 
 // Text index for search
 meetingSchema.index({ candidateName: 'text', position: 'text' });
+
+// Descending index for sorting by creation date
+meetingSchema.index({ createdAt: -1 });
 
 export const Meeting = model('Meeting', meetingSchema);
 ```
@@ -354,22 +387,27 @@ db.meetings.createIndex({ candidateName: 'text', position: 'text' });
 
 ### Meeting Validation
 
+- Title: 2-200 characters, required
+- Description: max 2000 characters, optional
 - Candidate name: 2-100 characters, required
 - Position: 2-100 characters, required
 - Start time must be in the future (on creation)
 - End time must be after start time
 - Meeting type must be 'online' or 'onsite'
 - Platform required if meeting type is 'online'
-- Status must be one of: pending, confirmed, cancelled, completed
-- Notes: max 2000 characters
+- Meeting link: valid URL, optional
+- Status must be one of: pending, confirmed, cancelled
+- Notes: max 2000 characters, optional
+- Interview notes: max 5000 characters, optional
 
 ### Feedback Validation
 
-- Comment: 10-2000 characters, required
-- Rating: 1-5, required
+- Topic: 1-200 characters, required
+- Comment: max 2000 characters, optional
+- Rating: integer 1-5, required
 - Interviewer ID must reference valid user
 
 ---
 
-**Document Version**: 1.1  
-**Last Updated**: March 7, 2026
+**Document Version**: 1.2
+**Last Updated**: March 8, 2026

@@ -252,11 +252,63 @@ Authorization: Bearer <accessToken>
 **Query Parameters**:
 
 - `page` (number, default: 1)
-- `limit` (number, default: 20, max: 100)
-- `status` (string, optional): pending|confirmed|cancelled|completed
-- `search` (string, optional): search by candidate name or position
-- `sortBy` (string, default: startTime): startTime|createdAt|candidateName
-- `sortOrder` (string, default: asc): asc|desc
+- `limit` (number, default: 10, max: 100)
+- `status` (string, optional): pending|confirmed|cancelled
+- `search` (string, optional): search by candidate name or position (text index)
+- `sortBy` (string, default: createdAt): startTime|createdAt|candidateName
+- `sortOrder` (string, default: desc): asc|desc
+- `startDate` (string, optional): ISO 8601 datetime, filter meetings from this date
+- `endDate` (string, optional): ISO 8601 datetime, filter meetings until this date
+
+**Headers**:
+
+```
+Authorization: Bearer <accessToken>
+```
+
+**Response** (200):
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Technical Interview - Software Engineer",
+      "description": "First-round technical interview",
+      "candidateName": "Alice Johnson",
+      "position": "Software Engineer",
+      "startTime": "2026-03-15T10:00:00Z",
+      "endTime": "2026-03-15T11:00:00Z",
+      "meetingType": "online",
+      "platform": "zoom",
+      "status": "confirmed",
+      "notes": "Technical interview - focus on algorithms",
+      "interviewNotes": "Strong candidate",
+      "createdBy": {
+        "id": "507f1f77bcf86cd799439012",
+        "fullName": "John Doe"
+      },
+      "createdAt": "2026-03-07T08:30:00Z",
+      "updatedAt": "2026-03-07T08:30:00Z"
+    }
+  ],
+  "pagination": {
+    "total": 95,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 10,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}
+```
+
+---
+
+### GET /meetings/summary
+
+**Description**: Get today's meetings and status summary
 
 **Headers**:
 
@@ -270,32 +322,29 @@ Authorization: Bearer <accessToken>
 {
   "success": true,
   "data": {
-    "meetings": [
+    "todayMeetings": [
       {
         "id": "507f1f77bcf86cd799439011",
+        "title": "Technical Interview",
         "candidateName": "Alice Johnson",
         "position": "Software Engineer",
-        "startTime": "2026-03-15T10:00:00Z",
-        "endTime": "2026-03-15T11:00:00Z",
+        "startTime": "2026-03-08T10:00:00Z",
+        "endTime": "2026-03-08T11:00:00Z",
         "meetingType": "online",
-        "platform": "zoom",
         "status": "confirmed",
-        "notes": "Technical interview - focus on algorithms",
         "createdBy": {
           "id": "507f1f77bcf86cd799439012",
           "fullName": "John Doe"
-        },
-        "createdAt": "2026-03-07T08:30:00Z",
-        "updatedAt": "2026-03-07T08:30:00Z"
+        }
       }
     ],
-    "pagination": {
-      "currentPage": 1,
-      "totalPages": 5,
-      "totalItems": 95,
-      "itemsPerPage": 20,
-      "hasNextPage": true,
-      "hasPrevPage": false
+    "summary": {
+      "total": 3,
+      "byStatus": {
+        "pending": 1,
+        "confirmed": 1,
+        "cancelled": 1
+      }
     }
   }
 }
@@ -320,6 +369,8 @@ Authorization: Bearer <accessToken>
   "success": true,
   "data": {
     "id": "507f1f77bcf86cd799439011",
+    "title": "Technical Interview - Software Engineer",
+    "description": "First-round technical interview",
     "candidateName": "Alice Johnson",
     "position": "Software Engineer",
     "startTime": "2026-03-15T10:00:00Z",
@@ -329,6 +380,7 @@ Authorization: Bearer <accessToken>
     "meetingLink": "https://zoom.us/j/123456789",
     "status": "confirmed",
     "notes": "Technical interview - focus on algorithms",
+    "interviewNotes": "Strong candidate with good technical depth",
     "feedback": [
       {
         "id": "507f1f77bcf86cd799439013",
@@ -336,6 +388,7 @@ Authorization: Bearer <accessToken>
           "id": "507f1f77bcf86cd799439014",
           "fullName": "Jane Smith"
         },
+        "topic": "Problem Solving",
         "comment": "Strong problem-solving skills",
         "rating": 4,
         "createdAt": "2026-03-15T11:05:00Z"
@@ -380,6 +433,8 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
+  "title": "Technical Interview - Software Engineer",
+  "description": "First-round technical interview",
   "candidateName": "Alice Johnson",
   "position": "Software Engineer",
   "startTime": "2026-03-15T10:00:00Z",
@@ -393,14 +448,17 @@ Authorization: Bearer <accessToken>
 
 **Validation**:
 
+- title: 2-200 characters, required
+- description: max 2000 characters, optional
 - candidateName: 2-100 characters, required
 - position: 2-100 characters, required
-- startTime: ISO 8601 date, future date, required
-- endTime: ISO 8601 date, after startTime, required
+- startTime: ISO 8601 datetime, future date, required
+- endTime: ISO 8601 datetime, after startTime, required
 - meetingType: enum [online, onsite], required
 - platform: string, required if meetingType is online
 - meetingLink: valid URL, optional
 - notes: max 2000 characters, optional
+- interviewNotes: max 5000 characters, optional
 
 **Response** (201):
 
@@ -409,6 +467,8 @@ Authorization: Bearer <accessToken>
   "success": true,
   "data": {
     "id": "507f1f77bcf86cd799439011",
+    "title": "Technical Interview - Software Engineer",
+    "description": "First-round technical interview",
     "candidateName": "Alice Johnson",
     "position": "Software Engineer",
     "startTime": "2026-03-15T10:00:00Z",
@@ -418,10 +478,7 @@ Authorization: Bearer <accessToken>
     "meetingLink": "https://zoom.us/j/123456789",
     "status": "pending",
     "notes": "Technical interview - focus on algorithms",
-    "createdBy": {
-      "id": "507f1f77bcf86cd799439012",
-      "fullName": "John Doe"
-    },
+    "createdBy": "507f1f77bcf86cd799439012",
     "createdAt": "2026-03-07T08:30:00Z",
     "updatedAt": "2026-03-07T08:30:00Z"
   }
@@ -462,6 +519,8 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
+  "title": "Updated Interview Title",
+  "description": "Updated description",
   "candidateName": "Alice Johnson",
   "position": "Senior Software Engineer",
   "startTime": "2026-03-15T14:00:00Z",
@@ -470,7 +529,8 @@ Authorization: Bearer <accessToken>
   "platform": null,
   "meetingLink": null,
   "status": "confirmed",
-  "notes": "Updated: Technical + behavioral interview"
+  "notes": "Updated: Technical + behavioral interview",
+  "interviewNotes": "Updated notes after interview"
 }
 ```
 
@@ -481,6 +541,8 @@ Authorization: Bearer <accessToken>
   "success": true,
   "data": {
     "id": "507f1f77bcf86cd799439011",
+    "title": "Updated Interview Title",
+    "description": "Updated description",
     "candidateName": "Alice Johnson",
     "position": "Senior Software Engineer",
     "startTime": "2026-03-15T14:00:00Z",
@@ -490,10 +552,8 @@ Authorization: Bearer <accessToken>
     "meetingLink": null,
     "status": "confirmed",
     "notes": "Updated: Technical + behavioral interview",
-    "createdBy": {
-      "id": "507f1f77bcf86cd799439012",
-      "fullName": "John Doe"
-    },
+    "interviewNotes": "Updated notes after interview",
+    "createdBy": "507f1f77bcf86cd799439012",
     "createdAt": "2026-03-07T08:30:00Z",
     "updatedAt": "2026-03-07T09:15:00Z"
   }
@@ -549,6 +609,7 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
+  "topic": "Technical Skills",
   "comment": "Strong problem-solving skills, good communication",
   "rating": 4
 }
@@ -556,24 +617,34 @@ Authorization: Bearer <accessToken>
 
 **Validation**:
 
-- comment: 10-2000 characters, required
-- rating: number 1-5, required
+- topic: 1-200 characters, required
+- comment: max 2000 characters, optional
+- rating: integer 1-5, required
 
 **Response** (201):
+
+Returns the full meeting object with populated feedback:
 
 ```json
 {
   "success": true,
   "data": {
-    "id": "507f1f77bcf86cd799439013",
-    "meetingId": "507f1f77bcf86cd799439011",
-    "interviewer": {
-      "id": "507f1f77bcf86cd799439014",
-      "fullName": "Jane Smith"
-    },
-    "comment": "Strong problem-solving skills, good communication",
-    "rating": 4,
-    "createdAt": "2026-03-15T11:05:00Z"
+    "id": "507f1f77bcf86cd799439011",
+    "title": "Technical Interview",
+    "candidateName": "Alice Johnson",
+    "feedback": [
+      {
+        "id": "507f1f77bcf86cd799439013",
+        "interviewer": {
+          "id": "507f1f77bcf86cd799439014",
+          "fullName": "Jane Smith"
+        },
+        "topic": "Technical Skills",
+        "comment": "Strong problem-solving skills, good communication",
+        "rating": 4,
+        "createdAt": "2026-03-15T11:05:00Z"
+      }
+    ]
   }
 }
 ```
@@ -695,5 +766,5 @@ Authorization: Bearer <accessToken>
 
 ---
 
-**Document Version**: 1.1  
-**Last Updated**: March 7, 2026
+**Document Version**: 1.2
+**Last Updated**: March 8, 2026

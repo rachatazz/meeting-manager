@@ -250,10 +250,12 @@ describe('POST /api/v1/auth/login/guest', () => {
 });
 
 describe('POST /api/v1/auth/login (guest rejection)', () => {
-  it('should return 401 when guest account tries to login via regular login', async () => {
-    await request(app)
+  it('should return 401 when guest tries to login via regular login (guest has no email/password)', async () => {
+    const guestRes = await request(app)
       .post('/api/v1/auth/register/guest')
       .send({ fullName: 'Guest', fingerprint: 'reject-fingerprint-001' });
+
+    expect(guestRes.body.data.user.email).toBeNull();
 
     const res = await request(app)
       .post('/api/v1/auth/login')
@@ -262,6 +264,21 @@ describe('POST /api/v1/auth/login (guest rejection)', () => {
 
     expect(res.body.success).toBe(false);
     expect(res.body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('should not allow guest to use regular login even if email somehow matches', async () => {
+    // Guest accounts have null email, so regular login can never find them
+    await request(app)
+      .post('/api/v1/auth/register/guest')
+      .send({ fullName: 'Guest', fingerprint: 'reject-fingerprint-002' });
+
+    // Verify guest must use /login/guest endpoint
+    const guestLoginRes = await request(app)
+      .post('/api/v1/auth/login/guest')
+      .send({ fingerprint: 'reject-fingerprint-002' })
+      .expect(200);
+
+    expect(guestLoginRes.body.data.accessToken).toBeDefined();
   });
 });
 
@@ -280,8 +297,76 @@ describe('POST /api/v1/auth/logout', () => {
     expect(res.body.message).toBe('Logged out successfully');
   });
 
+  it('should invalidate refresh token after logout', async () => {
+    const registerRes = await request(app).post('/api/v1/auth/register').send(validUser);
+    const { accessToken, refreshToken } = registerRes.body.data;
+
+    await request(app)
+      .post('/api/v1/auth/logout')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ refreshToken })
+      .expect(200);
+
+    const res = await request(app)
+      .post('/api/v1/auth/refresh')
+      .send({ refreshToken })
+      .expect(401);
+
+    expect(res.body.success).toBe(false);
+  });
+
   it('should return 401 without token', async () => {
     const res = await request(app).post('/api/v1/auth/logout').expect(401);
+
+    expect(res.body.error.code).toBe('UNAUTHORIZED');
+  });
+});
+
+describe('GET /api/v1/auth/me', () => {
+  it('should return current user info for authenticated user', async () => {
+    const registerRes = await request(app).post('/api/v1/auth/register').send(validUser);
+    const { accessToken } = registerRes.body.data;
+
+    const res = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.user.email).toBe(validUser.email);
+    expect(res.body.data.user.fullName).toBe(validUser.fullName);
+    expect(res.body.data.user.role).toBe(validUser.role);
+    expect(res.body.data.user.userType).toBe('user');
+  });
+
+  it('should return guest user info', async () => {
+    const guestRes = await request(app)
+      .post('/api/v1/auth/register/guest')
+      .send({ fullName: 'Guest User', fingerprint: 'me-endpoint-fingerprint' });
+    const { accessToken } = guestRes.body.data;
+
+    const res = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.user.email).toBeNull();
+    expect(res.body.data.user.fullName).toBe('Guest User');
+    expect(res.body.data.user.userType).toBe('guest');
+  });
+
+  it('should return 401 without authentication', async () => {
+    const res = await request(app).get('/api/v1/auth/me').expect(401);
+
+    expect(res.body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('should return 401 with invalid token', async () => {
+    const res = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Authorization', 'Bearer invalid-token')
+      .expect(401);
 
     expect(res.body.error.code).toBe('UNAUTHORIZED');
   });

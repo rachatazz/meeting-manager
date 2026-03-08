@@ -38,6 +38,8 @@ Thumbs.db
 *.sublime-workspace
 .windsurf/
 .agents/
+.claude/
+CLAUDE.md
 skills-lock.json
 
 # Testing

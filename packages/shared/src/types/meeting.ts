@@ -1,4 +1,4 @@
-export type MeetingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
+export type MeetingStatus = 'pending' | 'confirmed' | 'cancelled';
 export type MeetingType = 'online' | 'onsite';
 
 export interface IFeedback {
@@ -7,13 +7,16 @@ export interface IFeedback {
     id: string;
     fullName: string;
   };
-  comment: string;
+  topic?: string;
+  comment?: string;
   rating: number;
   createdAt: string;
 }
 
 export interface IMeeting {
   id: string;
+  title: string;
+  description?: string;
   candidateName: string;
   position: string;
   startTime: string;
@@ -23,6 +26,7 @@ export interface IMeeting {
   meetingLink?: string;
   status: MeetingStatus;
   notes?: string;
+  interviewNotes?: string;
   feedback: IFeedback[];
   createdBy: {
     id: string;
@@ -35,20 +39,36 @@ export interface IMeeting {
 
 export interface IMeetingListItem {
   id: string;
+  title: string;
+  description?: string;
   candidateName: string;
   position: string;
   startTime: string;
   endTime: string;
   meetingType: MeetingType;
   platform?: string;
+  meetingLink?: string;
   status: MeetingStatus;
   notes?: string;
+  interviewNotes?: string;
   createdBy: {
     id: string;
     fullName: string;
   };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface IMeetingSummary {
+  todayMeetings: IMeetingListItem[];
+  summary: {
+    total: number;
+    byStatus: {
+      pending: number;
+      confirmed: number;
+      cancelled: number;
+    };
+  };
 }
 
 export interface IPagination {

@@ -6,6 +6,7 @@ import {
   loginGuest,
   refreshAccessToken,
   logout,
+  getMe,
 } from '../../src/services/auth.service';
 import { User } from '../../src/models/User';
 import { ValidationError, UnauthorizedError } from '../../src/utils/errors';
@@ -100,6 +101,41 @@ describe('logout', () => {
 
     const dbUser = await User.findById(user.id);
     expect(dbUser?.refreshTokens).not.toContain(refreshToken);
+  });
+
+  it('should invalidate refresh token after logout', async () => {
+    const { user, refreshToken } = await register(validInput);
+    await logout(user.id, refreshToken);
+
+    await expect(refreshAccessToken(refreshToken)).rejects.toThrow(UnauthorizedError);
+  });
+});
+
+describe('getMe', () => {
+  it('should return user info for valid userId', async () => {
+    const { user } = await register(validInput);
+    const result = await getMe(user.id);
+
+    expect(result.id).toBe(user.id);
+    expect(result.email).toBe(validInput.email);
+    expect(result.fullName).toBe(validInput.fullName);
+    expect(result.role).toBe(validInput.role);
+    expect(result.userType).toBe('user');
+  });
+
+  it('should return guest user info', async () => {
+    const { user } = await registerGuest(validGuest);
+    const result = await getMe(user.id);
+
+    expect(result.id).toBe(user.id);
+    expect(result.email).toBeNull();
+    expect(result.fullName).toBe(validGuest.fullName);
+    expect(result.userType).toBe('guest');
+  });
+
+  it('should throw UnauthorizedError for non-existent userId', async () => {
+    const fakeId = '000000000000000000000000';
+    await expect(getMe(fakeId)).rejects.toThrow(UnauthorizedError);
   });
 });
 

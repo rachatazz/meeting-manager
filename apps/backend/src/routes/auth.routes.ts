@@ -4,6 +4,7 @@ import { authenticate } from '../middlewares/authenticate';
 
 const router: Router = Router();
 
+router.get('/me', authenticate, authController.getMe);
 router.post('/register', authController.register);
 router.post('/register/guest', authController.registerGuest);
 router.post('/login', authController.login);

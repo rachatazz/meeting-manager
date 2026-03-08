@@ -10,7 +10,7 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 
 - **Monorepo**: pnpm + workspace
 - **Runtime**: Node.js v24.14.0
-- **Frontend**: Nuxt 4 + PrimeVue + TailwindCSS + Pinia
+- **Frontend**: Nuxt 3 (v4 compat mode) + PrimeVue 4 + TailwindCSS + Pinia
 - **Backend**: Express.js + JWT + Zod + Swagger + Mongoose
 - **Database**: MongoDB
 - **Language**: TypeScript (Strict Mode)
@@ -44,7 +44,7 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 - Display upcoming meetings
 - Filter by status (Confirmed, Pending, Cancelled)
 - Search by candidate name or position
-- Pagination support (20 items per page)
+- Pagination support (10 items per page, max 100)
 
 #### Meeting Details
 
@@ -64,14 +64,17 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 
 #### Meeting Entity
 
+- Title (required)
+- Description (optional)
 - Candidate name
 - Position/role applied for
 - Date and time (start & end)
 - Meeting type (Onsite/Online)
 - Platform (Zoom, Google Meet, etc.)
-- Status (Pending, Confirmed, Cancelled, Completed)
+- Status (Pending, Confirmed, Cancelled)
 - Notes/description
-- Interview feedback
+- Interview notes (post-interview notes, max 5000 chars)
+- Interview feedback (topic, comment, rating)
 - Created by (user reference)
 - Timestamps (created, updated)
 
@@ -101,20 +104,18 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 ```
 meeting-manager/
 ├── apps/
-│   ├── frontend/              # Nuxt 4 application
-│   │   ├── app/              # Nuxt 4 app directory (recommended)
-│   │   │   ├── components/
-│   │   │   ├── composables/
-│   │   │   ├── layouts/
-│   │   │   ├── pages/
-│   │   │   ├── plugins/
-│   │   │   ├── middleware/
-│   │   │   └── utils/
-│   │   ├── server/           # Nuxt Server API routes
-│   │   │   └── api/
-│   │   ├── stores/           # Pinia stores
-│   │   ├── types/            # TypeScript types
-│   │   ├── assets/           # Build-time assets (CSS, images)
+│   ├── frontend/              # Nuxt 3 application (v4 compat mode)
+│   │   ├── app/              # App directory
+│   │   │   ├── assets/css/   # main.css, tailwind.css
+│   │   │   ├── components/   # MeetingForm, FeedbackForm, FeedbackList, StatusBadge, MeetingCard
+│   │   │   ├── composables/  # useApi, useAuth, useMeetings
+│   │   │   ├── layouts/      # default.vue, auth.vue
+│   │   │   ├── middleware/   # auth.ts
+│   │   │   ├── pages/        # index, dashboard, auth/*, meetings/*
+│   │   │   ├── plugins/      # auth.client.ts
+│   │   │   ├── stores/       # auth.ts, meeting.ts
+│   │   │   ├── app.vue
+│   │   │   └── error.vue
 │   │   ├── public/           # Static files
 │   │   ├── nuxt.config.ts
 │   │   └── package.json
@@ -132,7 +133,8 @@ meeting-manager/
 │       │   └── app.ts
 │       ├── tests/
 │       │   ├── unit/
-│       │   └── e2e/
+│       │   ├── integration/
+│       │   └── helpers/      # db.ts (mongodb-memory-server)
 │       ├── package.json
 │       └── tsconfig.json
 │
@@ -322,7 +324,7 @@ NUXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 
 - Node.js: 24.14.0
 - pnpm: 9.x
-- Nuxt: 4.x
+- Nuxt: 3.x (v4 compat mode)
 - Vue: 3.x
 - PrimeVue: 4.x
 - Express: 4.x
@@ -331,6 +333,6 @@ NUXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 
 ---
 
-**Document Version**: 1.1  
-**Last Updated**: March 7, 2026  
+**Document Version**: 1.2
+**Last Updated**: March 8, 2026
 **Status**: Approved

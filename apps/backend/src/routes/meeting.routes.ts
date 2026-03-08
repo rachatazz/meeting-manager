@@ -4,6 +4,7 @@ import { authenticate } from '../middlewares/authenticate';
 
 const router: Router = Router();
 
+router.get('/summary', authenticate, meetingController.getMeetingSummary);
 router.get('/', authenticate, meetingController.getMeetings);
 router.get('/:id', authenticate, meetingController.getMeetingById);
 router.post('/', authenticate, meetingController.createMeeting);

@@ -26,8 +26,21 @@ export async function getMeetings(
     if (!parsed.success) {
       throw new ValidationError(parseZodError(parsed.error));
     }
-    const result = await meetingService.getMeetings(parsed.data);
+    const result = await meetingService.getMeetings(parsed.data, req.user!.id, req.user!.role);
     res.status(200).json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getMeetingSummary(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const result = await meetingService.getMeetingSummary(req.user!.id, req.user!.role);
+    res.status(200).json({ success: true, data: result });
   } catch (err) {
     next(err);
   }
@@ -39,7 +52,7 @@ export async function getMeetingById(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const meeting = await meetingService.getMeetingById(String(req.params.id));
+    const meeting = await meetingService.getMeetingById(String(req.params.id), req.user!.id, req.user!.role);
     res.status(200).json({ success: true, data: meeting });
   } catch (err) {
     next(err);

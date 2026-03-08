@@ -22,6 +22,7 @@ interface AuthResult {
     email: string | null;
     fullName: string;
     role: string;
+    userType: 'user' | 'guest';
   };
   accessToken: string;
   refreshToken: string;
@@ -72,6 +73,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
       email: user.email,
       fullName: user.fullName,
       role: user.role,
+      userType: user.userType,
     },
     accessToken,
     refreshToken,
@@ -114,6 +116,7 @@ export async function login(input: LoginInput): Promise<AuthResult> {
       email: user.email,
       fullName: user.fullName,
       role: user.role,
+      userType: user.userType,
     },
     accessToken,
     refreshToken,
@@ -153,6 +156,7 @@ export async function registerGuest(input: GuestRegisterInput): Promise<AuthResu
       email: null,
       fullName: user.fullName,
       role: user.role,
+      userType: user.userType,
     },
     accessToken,
     refreshToken,
@@ -186,6 +190,7 @@ export async function loginGuest(input: GuestLoginInput): Promise<AuthResult> {
       email: null,
       fullName: user.fullName,
       role: user.role,
+      userType: user.userType,
     },
     accessToken,
     refreshToken,
@@ -219,4 +224,20 @@ export async function logout(userId: string, refreshToken: string): Promise<void
   await User.findByIdAndUpdate(userId, {
     $pull: { refreshTokens: refreshToken },
   });
+}
+
+export async function getMe(
+  userId: string,
+): Promise<{ id: string; email: string | null; fullName: string; role: string; userType: string }> {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new UnauthorizedError('User not found');
+  }
+  return {
+    id: user._id.toString(),
+    email: user.email,
+    fullName: user.fullName,
+    role: user.role,
+    userType: user.userType,
+  };
 }

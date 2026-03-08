@@ -3,7 +3,8 @@ import { Schema, model, Document, Types } from 'mongoose';
 export interface IFeedbackDocument {
   _id: Types.ObjectId;
   interviewerId: Types.ObjectId;
-  comment: string;
+  topic?: string;
+  comment?: string;
   rating: number;
   createdAt: Date;
   updatedAt: Date;
@@ -11,6 +12,8 @@ export interface IFeedbackDocument {
 
 export interface IMeetingDocument extends Document {
   _id: Types.ObjectId;
+  title: string;
+  description?: string;
   candidateName: string;
   position: string;
   startTime: Date;
@@ -18,13 +21,32 @@ export interface IMeetingDocument extends Document {
   meetingType: 'online' | 'onsite';
   platform?: string;
   meetingLink?: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: 'pending' | 'confirmed' | 'cancelled';
   notes?: string;
+  interviewNotes?: string;
   feedback: IFeedbackDocument[];
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const jsonTransform = {
+  virtuals: true,
+  versionKey: false,
+  transform(_doc: unknown, ret: Record<string, unknown>) {
+    delete ret._id;
+  },
+};
+
+const feedbackJsonTransform = {
+  virtuals: true,
+  versionKey: false,
+  transform(_doc: unknown, ret: Record<string, unknown>) {
+    delete ret._id;
+    ret.interviewer = ret.interviewerId;
+    delete ret.interviewerId;
+  },
+};
 
 const feedbackSchema = new Schema<IFeedbackDocument>(
   {
@@ -33,10 +55,14 @@ const feedbackSchema = new Schema<IFeedbackDocument>(
       ref: 'User',
       required: true,
     },
+    topic: {
+      type: String,
+      trim: true,
+      maxlength: 200,
+    },
     comment: {
       type: String,
-      required: true,
-      minlength: 10,
+      trim: true,
       maxlength: 2000,
     },
     rating: {
@@ -46,11 +72,23 @@ const feedbackSchema = new Schema<IFeedbackDocument>(
       max: 5,
     },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: feedbackJsonTransform }
 );
 
 const meetingSchema = new Schema<IMeetingDocument>(
   {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 200,
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+    },
     candidateName: {
       type: String,
       required: true,
@@ -89,13 +127,17 @@ const meetingSchema = new Schema<IMeetingDocument>(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+      enum: ['pending', 'confirmed', 'cancelled'],
       default: 'pending',
       index: true,
     },
     notes: {
       type: String,
       maxlength: 2000,
+    },
+    interviewNotes: {
+      type: String,
+      maxlength: 5000,
     },
     feedback: [feedbackSchema],
     createdBy: {
@@ -105,7 +147,7 @@ const meetingSchema = new Schema<IMeetingDocument>(
       index: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: jsonTransform }
 );
 
 meetingSchema.index({ status: 1, startTime: 1 });

@@ -27,6 +27,7 @@ beforeEach(async () => {
 const futureDate = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString();
 
 const validMeetingInput = () => ({
+  title: 'Interview Meeting',
   candidateName: 'Alice Smith',
   position: 'Software Engineer',
   startTime: futureDate(60 * 60 * 1000),
@@ -81,51 +82,54 @@ describe('getMeetingById', () => {
     const user = await createTestUser();
     const created = await createMeeting(validMeetingInput(), user._id.toString());
 
-    const meeting = await getMeetingById(created._id.toString());
+    const meeting = await getMeetingById(created._id.toString(), user._id.toString(), 'recruiter');
 
     expect(meeting._id.toString()).toBe(created._id.toString());
     expect((meeting.createdBy as any).fullName).toBe(user.fullName);
   });
 
   it('should throw NotFoundError for non-existent id', async () => {
+    const user = await createTestUser();
     const fakeId = new mongoose.Types.ObjectId().toString();
-    await expect(getMeetingById(fakeId)).rejects.toThrow(NotFoundError);
+    await expect(getMeetingById(fakeId, user._id.toString(), 'recruiter')).rejects.toThrow(NotFoundError);
   });
 
   it('should throw NotFoundError for invalid id format', async () => {
-    await expect(getMeetingById('invalid-id')).rejects.toThrow();
+    await expect(getMeetingById('invalid-id', 'any', 'recruiter')).rejects.toThrow();
   });
 });
 
 describe('getMeetings', () => {
+  let testUserId: string;
+
   beforeEach(async () => {
     const user = await createTestUser();
-    const userId = user._id.toString();
+    testUserId = user._id.toString();
 
     await Meeting.create([
       {
         ...validMeetingInput(),
         candidateName: 'Alice Smith',
         status: 'pending',
-        createdBy: userId,
+        createdBy: testUserId,
       },
       {
         ...validMeetingInput(),
         candidateName: 'Bob Jones',
         status: 'confirmed',
-        createdBy: userId,
+        createdBy: testUserId,
       },
       {
         ...validMeetingInput(),
         candidateName: 'Carol White',
         status: 'cancelled',
-        createdBy: userId,
+        createdBy: testUserId,
       },
     ]);
   });
 
   it('should return paginated results', async () => {
-    const result = await getMeetings({ page: 1, limit: 2 });
+    const result = await getMeetings({ page: 1, limit: 2 }, testUserId, 'recruiter');
 
     expect(result.data).toHaveLength(2);
     expect(result.pagination.total).toBe(3);
@@ -135,7 +139,7 @@ describe('getMeetings', () => {
   });
 
   it('should return second page correctly', async () => {
-    const result = await getMeetings({ page: 2, limit: 2 });
+    const result = await getMeetings({ page: 2, limit: 2 }, testUserId, 'recruiter');
 
     expect(result.data).toHaveLength(1);
     expect(result.pagination.page).toBe(2);
@@ -144,19 +148,19 @@ describe('getMeetings', () => {
   });
 
   it('should filter by status', async () => {
-    const result = await getMeetings({ status: 'pending' });
+    const result = await getMeetings({ status: 'pending' }, testUserId, 'recruiter');
 
     expect(result.data).toHaveLength(1);
     expect(result.data[0].status).toBe('pending');
   });
 
   it('should return all meetings without filter', async () => {
-    const result = await getMeetings({});
+    const result = await getMeetings({}, testUserId, 'recruiter');
     expect(result.pagination.total).toBe(3);
   });
 
   it('should default page to 1 and limit to 10', async () => {
-    const result = await getMeetings({});
+    const result = await getMeetings({}, testUserId, 'recruiter');
     expect(result.pagination.page).toBe(1);
     expect(result.pagination.limit).toBe(10);
   });
@@ -284,7 +288,7 @@ describe('addFeedback', () => {
 
     const updated = await addFeedback(
       created._id.toString(),
-      { comment: 'Great candidate with excellent skills', rating: 5 },
+      { topic: 'Technical Skills', comment: 'Great candidate with excellent skills', rating: 5 },
       interviewer._id.toString(),
       'interviewer',
     );
@@ -301,7 +305,7 @@ describe('addFeedback', () => {
 
     const updated = await addFeedback(
       created._id.toString(),
-      { comment: 'Admin feedback on the candidate', rating: 4 },
+      { topic: 'Culture Fit', comment: 'Admin feedback on the candidate', rating: 4 },
       admin._id.toString(),
       'admin',
     );
@@ -309,18 +313,19 @@ describe('addFeedback', () => {
     expect(updated.feedback).toHaveLength(1);
   });
 
-  it('should throw ForbiddenError when recruiter tries to add feedback', async () => {
+  it('should allow recruiter to add feedback', async () => {
     const owner = await createTestUser('recruiter');
     const created = await createMeeting(validMeetingInput(), owner._id.toString());
 
-    await expect(
-      addFeedback(
-        created._id.toString(),
-        { comment: 'Unauthorized feedback attempt here', rating: 3 },
-        owner._id.toString(),
-        'recruiter',
-      ),
-    ).rejects.toThrow(ForbiddenError);
+    const updated = await addFeedback(
+      created._id.toString(),
+      { topic: 'Communication', comment: 'Recruiter feedback on the candidate', rating: 3 },
+      owner._id.toString(),
+      'recruiter',
+    );
+
+    expect(updated.feedback).toHaveLength(1);
+    expect(updated.feedback[0].rating).toBe(3);
   });
 
   it('should throw NotFoundError for non-existent meeting', async () => {
@@ -330,7 +335,7 @@ describe('addFeedback', () => {
     await expect(
       addFeedback(
         fakeId,
-        { comment: 'Feedback for missing meeting here', rating: 3 },
+        { topic: 'General', comment: 'Feedback for missing meeting here', rating: 3 },
         interviewer._id.toString(),
         'interviewer',
       ),
@@ -345,13 +350,13 @@ describe('addFeedback', () => {
 
     await addFeedback(
       created._id.toString(),
-      { comment: 'First interviewer solid performance overall', rating: 4 },
+      { topic: 'Problem Solving', comment: 'First interviewer solid performance overall', rating: 4 },
       interviewer1._id.toString(),
       'interviewer',
     );
     const final = await addFeedback(
       created._id.toString(),
-      { comment: 'Second interviewer additional perspective here', rating: 5 },
+      { topic: 'Leadership', comment: 'Second interviewer additional perspective here', rating: 5 },
       interviewer2._id.toString(),
       'interviewer',
     );

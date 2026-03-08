@@ -17,6 +17,7 @@ beforeEach(async () => {
 const futureDate = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString();
 
 const validMeeting = () => ({
+  title: 'Interview Meeting',
   candidateName: 'Alice Smith',
   position: 'Software Engineer',
   startTime: futureDate(60 * 60 * 1000),
@@ -231,7 +232,7 @@ describe('GET /api/v1/meetings/:id', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     const res = await request(app)
       .get(`/api/v1/meetings/${id}`)
@@ -239,7 +240,7 @@ describe('GET /api/v1/meetings/:id', () => {
       .expect(200);
 
     expect(res.body.success).toBe(true);
-    expect(res.body.data._id).toBe(id);
+    expect(res.body.data.id).toBe(id);
     expect(res.body.data.createdBy).toBeDefined();
   });
 
@@ -268,7 +269,7 @@ describe('PUT /api/v1/meetings/:id', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     const res = await request(app)
       .put(`/api/v1/meetings/${id}`)
@@ -289,7 +290,7 @@ describe('PUT /api/v1/meetings/:id', () => {
       .set('Authorization', `Bearer ${ownerToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     const res = await request(app)
       .put(`/api/v1/meetings/${id}`)
@@ -309,7 +310,7 @@ describe('PUT /api/v1/meetings/:id', () => {
       .set('Authorization', `Bearer ${ownerToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     const res = await request(app)
       .put(`/api/v1/meetings/${id}`)
@@ -349,7 +350,7 @@ describe('DELETE /api/v1/meetings/:id', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     const res = await request(app)
       .delete(`/api/v1/meetings/${id}`)
@@ -369,7 +370,7 @@ describe('DELETE /api/v1/meetings/:id', () => {
       .set('Authorization', `Bearer ${ownerToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     await request(app)
       .delete(`/api/v1/meetings/${id}`)
@@ -386,7 +387,7 @@ describe('DELETE /api/v1/meetings/:id', () => {
       .set('Authorization', `Bearer ${ownerToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     const res = await request(app)
       .delete(`/api/v1/meetings/${id}`)
@@ -415,6 +416,7 @@ describe('DELETE /api/v1/meetings/:id', () => {
 
 describe('POST /api/v1/meetings/:id/feedback', () => {
   const validFeedback = {
+    topic: 'Technical Skills',
     comment: 'Great candidate with excellent technical skills',
     rating: 5,
   };
@@ -428,7 +430,7 @@ describe('POST /api/v1/meetings/:id/feedback', () => {
       .set('Authorization', `Bearer ${recruiterToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     const res = await request(app)
       .post(`/api/v1/meetings/${id}/feedback`)
@@ -442,7 +444,7 @@ describe('POST /api/v1/meetings/:id/feedback', () => {
     expect(res.body.data.feedback[0].rating).toBe(5);
   });
 
-  it('should return 403 when recruiter tries to add feedback', async () => {
+  it('should allow recruiter to add feedback', async () => {
     const { accessToken } = await registerAndLogin('recruiter');
 
     const createRes = await request(app)
@@ -450,15 +452,16 @@ describe('POST /api/v1/meetings/:id/feedback', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     const res = await request(app)
       .post(`/api/v1/meetings/${id}/feedback`)
       .set('Authorization', `Bearer ${accessToken}`)
       .send(validFeedback)
-      .expect(403);
+      .expect(201);
 
-    expect(res.body.error.code).toBe('FORBIDDEN');
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.feedback).toHaveLength(1);
   });
 
   it('should return 400 for invalid rating (out of range)', async () => {
@@ -470,18 +473,18 @@ describe('POST /api/v1/meetings/:id/feedback', () => {
       .set('Authorization', `Bearer ${recruiterToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     const res = await request(app)
       .post(`/api/v1/meetings/${id}/feedback`)
       .set('Authorization', `Bearer ${interviewerToken}`)
-      .send({ comment: 'Some feedback comment here', rating: 6 })
+      .send({ topic: 'Technical Skills', comment: 'Some feedback comment here', rating: 6 })
       .expect(400);
 
     expect(res.body.error.details[0].field).toBe('rating');
   });
 
-  it('should return 400 for comment too short', async () => {
+  it('should return 400 for missing topic', async () => {
     const { accessToken: recruiterToken } = await registerAndLogin('recruiter');
     const { accessToken: interviewerToken } = await registerAndLogin('interviewer');
 
@@ -490,15 +493,15 @@ describe('POST /api/v1/meetings/:id/feedback', () => {
       .set('Authorization', `Bearer ${recruiterToken}`)
       .send(validMeeting());
 
-    const id = createRes.body.data._id;
+    const id = createRes.body.data.id;
 
     const res = await request(app)
       .post(`/api/v1/meetings/${id}/feedback`)
       .set('Authorization', `Bearer ${interviewerToken}`)
-      .send({ comment: 'Too short', rating: 4 })
+      .send({ comment: 'Some feedback comment here', rating: 4 })
       .expect(400);
 
-    expect(res.body.error.details[0].field).toBe('comment');
+    expect(res.body.error.details[0].field).toBe('topic');
   });
 
   it('should return 404 for non-existent meeting', async () => {
