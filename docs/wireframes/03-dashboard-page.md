@@ -1,7 +1,7 @@
 # Dashboard Page Wireframe
 
 ## Page Overview
-Main dashboard displaying upcoming meetings with search, filter, and management capabilities.
+Main dashboard displaying today's meetings (server-side paginated) and a status summary (total, pending, confirmed, cancelled) for the current day. Today's meetings are fetched via `GET /meetings` with date filters, and the summary via `GET /meetings/summary` with `startDate`/`endDate` query params.
 
 ## Layout Structure
 

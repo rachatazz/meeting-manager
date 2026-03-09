@@ -1,5 +1,11 @@
 import type { IMeeting, IMeetingListItem, IMeetingSummary, IPagination } from '@meeting-manager/shared';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { useMeetingStore } from '~/stores/meeting';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface MeetingListResponse {
   success: boolean;
@@ -147,15 +153,36 @@ export function useMeetings() {
     return data.data;
   }
 
+  function getTodayRange() {
+    const today = dayjs().tz('Asia/Bangkok');
+    return {
+      startDate: today.startOf('day').toISOString(),
+      endDate: today.endOf('day').toISOString(),
+    };
+  }
+
   async function fetchSummary() {
-    const data = await request<{ success: boolean; data: IMeetingSummary }>('/meetings/summary');
+    const { startDate, endDate } = getTodayRange();
+    const qs = new URLSearchParams({ startDate, endDate }).toString();
+    const data = await request<{ success: boolean; data: IMeetingSummary }>(`/meetings/summary?${qs}`);
     return data.data;
+  }
+
+  async function fetchTodayMeetings(params?: { page?: number }) {
+    const { startDate, endDate } = getTodayRange();
+    return fetchMeetings({
+      startDate,
+      endDate,
+      sort: 'date_asc',
+      page: params?.page,
+    });
   }
 
   return {
     fetchMeetings,
     fetchMeeting,
     fetchSummary,
+    fetchTodayMeetings,
     createMeeting,
     updateMeeting,
     deleteMeeting,

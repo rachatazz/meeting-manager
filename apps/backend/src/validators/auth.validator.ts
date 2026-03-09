@@ -12,7 +12,7 @@ export const registerSchema = z.object({
     .string()
     .min(2, 'Full name must be at least 2 characters')
     .max(100, 'Full name must not exceed 100 characters'),
-  role: z.enum(['recruiter', 'interviewer', 'admin']).optional().default('recruiter'),
+  role: z.enum(['recruiter', 'interviewer']).optional().default('recruiter'),
 });
 
 export const guestRegisterSchema = z.object({

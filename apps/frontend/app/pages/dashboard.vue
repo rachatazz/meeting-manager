@@ -53,7 +53,7 @@
       <i class="pi pi-exclamation-triangle text-4xl text-red-400 mb-3 block" />
       <p class="text-slate-900 font-semibold mb-2">Failed to load data</p>
       <p class="text-sm text-slate-500 mb-4">{{ error }}</p>
-      <Button label="Try Again" @click="loadSummary" />
+      <Button label="Try Again" @click="loadDashboard" />
     </div>
 
     <!-- Empty state -->
@@ -70,7 +70,7 @@
     <!-- Meeting cards -->
     <div v-else class="flex flex-col gap-4">
       <MeetingCard
-        v-for="meeting in paginatedMeetings"
+        v-for="meeting in todayMeetings"
         :key="meeting.id"
         :meeting="meeting"
         variant="compact"
@@ -125,24 +125,21 @@
 
 <script setup lang="ts">
 import type { IMeetingSummary } from '@meeting-manager/shared';
+import { useMeetingStore } from '~/stores/meeting';
 
 definePageMeta({ middleware: 'auth' });
 
-const { fetchSummary } = useMeetings();
+const { fetchSummary, fetchTodayMeetings } = useMeetings();
+const meetingStore = useMeetingStore();
 
 const loading = ref(true);
 const error = ref<string | null>(null);
-const todayMeetings = ref<IMeetingSummary['todayMeetings']>([]);
-const summary = ref<IMeetingSummary['summary'] | null>(null);
-
-const PAGE_SIZE = 10;
+const summary = ref<IMeetingSummary | null>(null);
 const currentPage = ref(1);
 
-const totalPages = computed(() => Math.ceil(todayMeetings.value.length / PAGE_SIZE));
-const paginatedMeetings = computed(() => {
-  const start = (currentPage.value - 1) * PAGE_SIZE;
-  return todayMeetings.value.slice(start, start + PAGE_SIZE);
-});
+const todayMeetings = computed(() => meetingStore.meetings);
+const pagination = computed(() => meetingStore.pagination);
+const totalPages = computed(() => pagination.value?.totalPages ?? 1);
 
 const todayLabel = computed(() => {
   return new Date().toLocaleDateString('en-US', {
@@ -153,13 +150,15 @@ const todayLabel = computed(() => {
   });
 });
 
-async function loadSummary() {
+async function loadDashboard() {
   loading.value = true;
   error.value = null;
   try {
-    const data = await fetchSummary();
-    todayMeetings.value = data.todayMeetings;
-    summary.value = data.summary;
+    const [summaryData] = await Promise.all([
+      fetchSummary(),
+      fetchTodayMeetings({ page: currentPage.value }),
+    ]);
+    summary.value = summaryData;
   } catch (err: unknown) {
     const e = err as { data?: { error?: { message?: string } } };
     error.value = e?.data?.error?.message || 'Failed to load dashboard data';
@@ -168,5 +167,9 @@ async function loadSummary() {
   }
 }
 
-onMounted(() => loadSummary());
+watch(currentPage, () => {
+  fetchTodayMeetings({ page: currentPage.value });
+});
+
+onMounted(() => loadDashboard());
 </script>

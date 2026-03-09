@@ -60,14 +60,11 @@ export interface IMeetingListItem {
 }
 
 export interface IMeetingSummary {
-  todayMeetings: IMeetingListItem[];
-  summary: {
-    total: number;
-    byStatus: {
-      pending: number;
-      confirmed: number;
-      cancelled: number;
-    };
+  total: number;
+  byStatus: {
+    pending: number;
+    confirmed: number;
+    cancelled: number;
   };
 }
 

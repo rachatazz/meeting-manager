@@ -333,6 +333,6 @@ NUXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 
 ---
 
-**Document Version**: 1.2
-**Last Updated**: March 8, 2026
+**Document Version**: 1.3
+**Last Updated**: March 10, 2026
 **Status**: Approved

@@ -160,17 +160,15 @@ User registration page for creating new accounts in the Meeting Manager system.
 
 - **Dropdown**:
   - Placeholder: "Select Role"
-  - Options: 
-    - Recruiter
-    - Hiring Manager
+  - Options:
+    - Recruiter (default)
     - Interviewer
-    - Admin
+  - State: Disabled (role is pre-selected as Recruiter; admin role is assigned separately)
   - Height: 2.5rem (40px)
   - Border: 1px solid #E2E8F0
   - Border Radius: 0.375rem (6px)
   - Padding: 0.5rem 0.75rem
   - Icon: Chevron down
-  - Focus State: Border color #3B82F6, shadow-sm
   - Margin Bottom: 1.5rem (24px)
 
 ### 9. Register Button
@@ -225,7 +223,7 @@ User registration page for creating new accounts in the Meeting Manager system.
   - At least one number
   - At least one special character
 - **Confirm Password**: Required, must match password
-- **Role**: Required, must select from dropdown
+- **Role**: Defaults to Recruiter (dropdown disabled)
 
 ## Real-time Validation
 - Email: Check format on blur

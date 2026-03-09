@@ -5,6 +5,7 @@ import {
   updateMeetingSchema,
   addFeedbackSchema,
   meetingQuerySchema,
+  summaryQuerySchema,
 } from '../validators/meeting.validator';
 import { ValidationError } from '../utils/errors';
 import type { AuthRequest } from '../middlewares/authenticate';
@@ -39,7 +40,16 @@ export async function getMeetingSummary(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const result = await meetingService.getMeetingSummary(req.user!.id, req.user!.role);
+    const parsed = summaryQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw new ValidationError(parseZodError(parsed.error));
+    }
+    const result = await meetingService.getMeetingSummary(
+      req.user!.id,
+      req.user!.role,
+      parsed.data.startDate,
+      parsed.data.endDate,
+    );
     res.status(200).json({ success: true, data: result });
   } catch (err) {
     next(err);

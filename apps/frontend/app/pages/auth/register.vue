@@ -100,6 +100,7 @@
           placeholder="Select Role"
           class="w-full"
           :class="{ 'border-red-500': errors.role }"
+          disabled
         />
         <small v-if="errors.role" class="text-red-500 text-xs mt-1 block">{{ errors.role }}</small>
       </div>
@@ -130,10 +131,9 @@ const { register } = useAuth();
 const roles = [
   { label: 'Recruiter', value: 'recruiter' },
   { label: 'Interviewer', value: 'interviewer' },
-  { label: 'Admin', value: 'admin' },
 ];
 
-const form = reactive({ fullName: '', email: '', password: '', confirmPassword: '', role: '' });
+const form = reactive({ fullName: '', email: '', password: '', confirmPassword: '', role: 'recruiter' });
 const errors = reactive<Record<string, string>>({});
 const loading = ref(false);
 const apiError = ref('');

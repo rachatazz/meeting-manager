@@ -31,14 +31,11 @@ export interface PaginatedMeetings {
 }
 
 export interface MeetingSummary {
-  todayMeetings: IMeetingDocument[];
-  summary: {
-    total: number;
-    byStatus: {
-      pending: number;
-      confirmed: number;
-      cancelled: number;
-    };
+  total: number;
+  byStatus: {
+    pending: number;
+    confirmed: number;
+    cancelled: number;
   };
 }
 
@@ -172,25 +169,23 @@ export async function deleteMeeting(id: string, userId: string, userRole: string
   await meeting.deleteOne();
 }
 
-export async function getMeetingSummary(userId: string, userRole: string): Promise<MeetingSummary> {
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-
+export async function getMeetingSummary(
+  userId: string,
+  userRole: string,
+  startDate: string,
+  endDate: string,
+): Promise<MeetingSummary> {
   const todayFilter: FilterQuery<IMeetingDocument> = {
-    startTime: { $gte: startOfDay, $lt: endOfDay },
+    startTime: { $gte: new Date(startDate), $lt: new Date(endDate) },
   };
 
   if (userRole !== 'admin') {
     todayFilter.createdBy = new mongo.ObjectId(userId);
   }
 
-  const [todayMeetings, statusCounts] = await Promise.all([
-    Meeting.find(todayFilter).sort({ startTime: 1 }).populate('createdBy', 'fullName email role'),
-    Meeting.aggregate([
-      { $match: todayFilter },
-      { $group: { _id: '$status', count: { $sum: 1 } } },
-    ]),
+  const statusCounts = await Meeting.aggregate([
+    { $match: todayFilter },
+    { $group: { _id: '$status', count: { $sum: 1 } } },
   ]);
 
   const byStatus = { pending: 0, confirmed: 0, cancelled: 0 };
@@ -203,10 +198,7 @@ export async function getMeetingSummary(userId: string, userRole: string): Promi
     }
   }
 
-  return {
-    todayMeetings,
-    summary: { total, byStatus },
-  };
+  return { total, byStatus };
 }
 
 export async function addFeedback(

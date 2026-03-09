@@ -409,5 +409,5 @@ db.meetings.createIndex({ candidateName: 'text', position: 'text' });
 
 ---
 
-**Document Version**: 1.2
-**Last Updated**: March 8, 2026
+**Document Version**: 1.3
+**Last Updated**: March 10, 2026

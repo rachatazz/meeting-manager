@@ -119,6 +119,11 @@ export const meetingQuerySchema = z.object({
   endDate: z.string().datetime({ message: 'endDate must be a valid ISO datetime' }).optional(),
 });
 
+export const summaryQuerySchema = z.object({
+  startDate: z.string().datetime({ message: 'startDate must be a valid ISO datetime' }),
+  endDate: z.string().datetime({ message: 'endDate must be a valid ISO datetime' }),
+});
+
 export type CreateMeetingInput = z.infer<typeof createMeetingSchema>;
 export type UpdateMeetingInput = z.infer<typeof updateMeetingSchema>;
 export type AddFeedbackInput = z.infer<typeof addFeedbackSchema>;

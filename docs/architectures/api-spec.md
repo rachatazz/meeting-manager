@@ -49,7 +49,7 @@ Production: https://api.meeting-manager.com/api/v1
 - Email: valid email format, unique
 - Password: min 8 chars, 1 uppercase, 1 number, 1 special char
 - Full name: 2-100 characters
-- Role: enum [recruiter, interviewer, admin]
+- Role: enum [recruiter, interviewer] (admin role cannot be self-assigned via registration)
 
 ---
 
@@ -308,7 +308,12 @@ Authorization: Bearer <accessToken>
 
 ### GET /meetings/summary
 
-**Description**: Get today's meetings and status summary
+**Description**: Get meeting status summary for a given date range
+
+**Query Parameters**:
+
+- `startDate` (string, required): ISO 8601 datetime, start of date range
+- `endDate` (string, required): ISO 8601 datetime, end of date range
 
 **Headers**:
 
@@ -322,29 +327,11 @@ Authorization: Bearer <accessToken>
 {
   "success": true,
   "data": {
-    "todayMeetings": [
-      {
-        "id": "507f1f77bcf86cd799439011",
-        "title": "Technical Interview",
-        "candidateName": "Alice Johnson",
-        "position": "Software Engineer",
-        "startTime": "2026-03-08T10:00:00Z",
-        "endTime": "2026-03-08T11:00:00Z",
-        "meetingType": "online",
-        "status": "confirmed",
-        "createdBy": {
-          "id": "507f1f77bcf86cd799439012",
-          "fullName": "John Doe"
-        }
-      }
-    ],
-    "summary": {
-      "total": 3,
-      "byStatus": {
-        "pending": 1,
-        "confirmed": 1,
-        "cancelled": 1
-      }
+    "total": 3,
+    "byStatus": {
+      "pending": 1,
+      "confirmed": 1,
+      "cancelled": 1
     }
   }
 }
@@ -766,5 +753,5 @@ Authorization: Bearer <accessToken>
 
 ---
 
-**Document Version**: 1.2
-**Last Updated**: March 8, 2026
+**Document Version**: 1.3
+**Last Updated**: March 10, 2026
