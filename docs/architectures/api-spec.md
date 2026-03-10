@@ -282,6 +282,7 @@ Authorization: Bearer <accessToken>
       "endTime": "2026-03-15T11:00:00Z",
       "meetingType": "online",
       "platform": "zoom",
+      "location": null,
       "status": "confirmed",
       "notes": "Technical interview - focus on algorithms",
       "interviewNotes": "Strong candidate",
@@ -365,6 +366,7 @@ Authorization: Bearer <accessToken>
     "meetingType": "online",
     "platform": "zoom",
     "meetingLink": "https://zoom.us/j/123456789",
+    "location": null,
     "status": "confirmed",
     "notes": "Technical interview - focus on algorithms",
     "interviewNotes": "Strong candidate with good technical depth",
@@ -429,6 +431,7 @@ Authorization: Bearer <accessToken>
   "meetingType": "online",
   "platform": "zoom",
   "meetingLink": "https://zoom.us/j/123456789",
+  "location": null,
   "notes": "Technical interview - focus on algorithms"
 }
 ```
@@ -444,6 +447,7 @@ Authorization: Bearer <accessToken>
 - meetingType: enum [online, onsite], required
 - platform: string, required if meetingType is online
 - meetingLink: valid URL, optional
+- location: max 500 characters, optional (for onsite meetings)
 - notes: max 2000 characters, optional
 - interviewNotes: max 5000 characters, optional
 
@@ -463,6 +467,7 @@ Authorization: Bearer <accessToken>
     "meetingType": "online",
     "platform": "zoom",
     "meetingLink": "https://zoom.us/j/123456789",
+    "location": null,
     "status": "pending",
     "notes": "Technical interview - focus on algorithms",
     "createdBy": "507f1f77bcf86cd799439012",
@@ -515,6 +520,7 @@ Authorization: Bearer <accessToken>
   "meetingType": "onsite",
   "platform": null,
   "meetingLink": null,
+  "location": "True Digital Park",
   "status": "confirmed",
   "notes": "Updated: Technical + behavioral interview",
   "interviewNotes": "Updated notes after interview"
@@ -537,6 +543,7 @@ Authorization: Bearer <accessToken>
     "meetingType": "onsite",
     "platform": null,
     "meetingLink": null,
+    "location": "True Digital Park",
     "status": "confirmed",
     "notes": "Updated: Technical + behavioral interview",
     "interviewNotes": "Updated notes after interview",
@@ -753,5 +760,5 @@ Authorization: Bearer <accessToken>
 
 ---
 
-**Document Version**: 1.3
+**Document Version**: 1.4
 **Last Updated**: March 10, 2026

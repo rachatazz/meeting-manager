@@ -28,6 +28,7 @@ export const createMeetingSchema = z
     meetingType: z.enum(['online', 'onsite']),
     platform: z.string().trim().optional(),
     meetingLink: z.string().url('Must be a valid URL').optional(),
+    location: z.string().max(500, 'Location must not exceed 500 characters').optional(),
     status: z
       .enum(['pending', 'confirmed', 'cancelled'])
       .optional()
@@ -70,6 +71,7 @@ export const updateMeetingSchema = z
     meetingType: z.enum(['online', 'onsite']).optional(),
     platform: z.string().trim().optional(),
     meetingLink: z.string().url('Must be a valid URL').optional(),
+    location: z.string().max(500, 'Location must not exceed 500 characters').optional(),
     status: z.enum(['pending', 'confirmed', 'cancelled']).optional(),
     notes: z.string().max(2000, 'Notes must not exceed 2000 characters').optional(),
     interviewNotes: z.string().max(5000, 'Interview notes must not exceed 5000 characters').optional(),

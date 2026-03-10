@@ -28,7 +28,7 @@
             <span>{{
               meeting.meetingType === 'online'
                 ? `Online${meeting.platform ? ` (${meeting.platform})` : ''}`
-                : 'Onsite'
+                : `Onsite${meeting.location ? ` - ${meeting.location}` : ''}`
             }}</span>
           </div>
           <a

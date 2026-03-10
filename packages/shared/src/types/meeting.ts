@@ -24,6 +24,7 @@ export interface IMeeting {
   meetingType: MeetingType;
   platform?: string;
   meetingLink?: string;
+  location?: string;
   status: MeetingStatus;
   notes?: string;
   interviewNotes?: string;
@@ -48,6 +49,7 @@ export interface IMeetingListItem {
   meetingType: MeetingType;
   platform?: string;
   meetingLink?: string;
+  location?: string;
   status: MeetingStatus;
   notes?: string;
   interviewNotes?: string;

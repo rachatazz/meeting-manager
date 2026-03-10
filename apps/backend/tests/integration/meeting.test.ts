@@ -162,6 +162,20 @@ describe('POST /api/v1/meetings', () => {
     expect(res.body.success).toBe(true);
   });
 
+  it('should create onsite meeting with location', async () => {
+    const { accessToken } = await registerAndLogin();
+    const { platform: _, ...meeting } = validMeeting();
+
+    const res = await request(app)
+      .post('/api/v1/meetings')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ ...meeting, meetingType: 'onsite', location: 'True Digital Park' })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.location).toBe('True Digital Park');
+  });
+
   it('should always set status to pending on create', async () => {
     const { accessToken } = await registerAndLogin();
 
@@ -309,6 +323,26 @@ describe('PUT /api/v1/meetings/:id', () => {
 
     expect(res.body.success).toBe(true);
     expect(res.body.data.candidateName).toBe('Updated Alice');
+  });
+
+  it('should update meeting with location', async () => {
+    const { accessToken } = await registerAndLogin();
+    const createRes = await request(app)
+      .post('/api/v1/meetings')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send(validMeeting());
+
+    const id = createRes.body.data.id;
+
+    const res = await request(app)
+      .put(`/api/v1/meetings/${id}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ meetingType: 'onsite', location: 'True Digital Park' })
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.location).toBe('True Digital Park');
+    expect(res.body.data.meetingType).toBe('onsite');
   });
 
   it('should allow admin to update any meeting', async () => {

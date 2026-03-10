@@ -220,6 +220,21 @@ describe('updateMeeting', () => {
     ).rejects.toThrow(NotFoundError);
   });
 
+  it('should update meeting with location', async () => {
+    const user = await createTestUser();
+    const created = await createMeeting(validMeetingInput(), user._id.toString());
+
+    const updated = await updateMeeting(
+      created._id.toString(),
+      { meetingType: 'onsite', location: 'True Digital Park' },
+      user._id.toString(),
+      'recruiter',
+    );
+
+    expect(updated.location).toBe('True Digital Park');
+    expect(updated.meetingType).toBe('onsite');
+  });
+
   it('should update startTime and endTime as Dates', async () => {
     const user = await createTestUser();
     const created = await createMeeting(validMeetingInput(), user._id.toString());

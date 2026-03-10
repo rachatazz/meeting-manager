@@ -21,6 +21,7 @@ export interface IMeetingDocument extends Document {
   meetingType: 'online' | 'onsite';
   platform?: string;
   meetingLink?: string;
+  location?: string;
   status: 'pending' | 'confirmed' | 'cancelled';
   notes?: string;
   interviewNotes?: string;
@@ -124,6 +125,11 @@ const meetingSchema = new Schema<IMeetingDocument>(
     meetingLink: {
       type: String,
       trim: true,
+    },
+    location: {
+      type: String,
+      trim: true,
+      maxlength: 500,
     },
     status: {
       type: String,

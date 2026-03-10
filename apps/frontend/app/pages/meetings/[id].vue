@@ -38,7 +38,9 @@
           <div class="bg-red-50 px-4 sm:px-6 py-4 rounded-t-lg border-b border-red-300">
             <h2 class="text-lg font-semibold text-red-700">Danger Zone</h2>
           </div>
-          <div class="px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div
+            class="px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
             <div>
               <p class="text-sm font-medium text-slate-900">Delete this meeting</p>
               <p class="text-sm text-slate-500 mt-0.5">
@@ -133,7 +135,7 @@
                     {{
                       meeting.meetingType === 'online'
                         ? `Online (${meeting.platform || 'N/A'})`
-                        : 'Onsite'
+                        : `Onsite${meeting.location ? ` - ${meeting.location}` : ''}`
                     }}
                   </span>
                 </div>
@@ -170,7 +172,9 @@
 
           <!-- Interview Notes -->
           <div class="bg-white border border-slate-200 rounded-lg shadow-sm">
-            <div class="flex items-center justify-between px-4 sm:px-6 py-4 border-b-2 border-slate-200">
+            <div
+              class="flex items-center justify-between px-4 sm:px-6 py-4 border-b-2 border-slate-200"
+            >
               <h2 class="text-lg font-semibold text-slate-900">Interview Notes</h2>
               <Button
                 :label="savingInterviewNotes ? 'Saving...' : 'Save'"
@@ -223,7 +227,8 @@
         <i class="pi pi-exclamation-triangle text-2xl text-red-500 mt-0.5" />
         <div>
           <p class="text-sm text-slate-700">
-            Are you sure you want to delete <span class="font-semibold">{{ meeting?.title }}</span>?
+            Are you sure you want to delete <span class="font-semibold">{{ meeting?.title }}</span
+            >?
           </p>
           <p class="text-sm text-slate-500 mt-1">This action cannot be undone.</p>
         </div>

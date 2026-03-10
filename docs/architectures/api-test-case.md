@@ -488,6 +488,7 @@ it('should return guest user info', async () => {
 | M1.7 | Allow onsite meeting without platform | 201 | Integration |
 | M1.8 | Always set status to pending on create | status=pending | Integration + Unit |
 | M1.9 | Store startTime and endTime as Dates | instanceof Date | Unit |
+| M1.10 | Create onsite meeting with location | 201 | Integration |
 
 #### M1.1: Create meeting
 
@@ -562,6 +563,7 @@ it('should create a meeting for authenticated user', async () => {
 | M4.4 | 404 for non-existent meeting | 404 MEETING_NOT_FOUND | Integration + Unit |
 | M4.5 | 401 without authentication | 401 | Integration |
 | M4.6 | Update startTime/endTime as Dates | instanceof Date | Unit |
+| M4.7 | Update meeting with location | 200 | Integration + Unit |
 
 ---
 
@@ -659,10 +661,10 @@ it('should allow interviewer to add feedback', async () => {
 | File | Type | Tests |
 |------|------|-------|
 | `tests/unit/auth.service.test.ts` | Unit | 14 |
-| `tests/unit/meeting.service.test.ts` | Unit | 21 |
+| `tests/unit/meeting.service.test.ts` | Unit | 22 |
 | `tests/integration/auth.test.ts` | Integration | 27 |
-| `tests/integration/meeting.test.ts` | Integration | 33 |
-| **Total** | | **95 → 105** |
+| `tests/integration/meeting.test.ts` | Integration | 35 |
+| **Total** | | **98 → 108** |
 
 ### Coverage Target
 
@@ -687,5 +689,5 @@ pnpm test:integration      # Integration tests only
 
 ---
 
-**Document Version**: 2.1
+**Document Version**: 2.2
 **Last Updated**: March 10, 2026
