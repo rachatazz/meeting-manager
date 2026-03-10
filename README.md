@@ -5,9 +5,9 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 ## Tech Stack
 
 - **Monorepo**: pnpm workspaces
-- **Runtime**: Node.js v24.14.0
-- **Frontend**: Nuxt 4 + PrimeVue 4 + TailwindCSS + Pinia
-- **Backend**: Express.js + JWT + Zod + Mongoose
+- **Runtime**: Node.js >= 24
+- **Frontend**: Nuxt 4 + PrimeVue 4 + TailwindCSS 3 + Pinia
+- **Backend**: Express.js 4 + JWT + Zod + Mongoose 8
 - **Database**: MongoDB 7.x
 - **Language**: TypeScript (strict mode)
 - **Testing**: Jest + Supertest + mongodb-memory-server
@@ -18,8 +18,9 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 - **Authentication**: Register/login with JWT (access + refresh tokens), guest access via browser fingerprint
 - **Meeting CRUD**: Create, view, edit, and delete candidate meetings
 - **Dashboard**: List upcoming meetings with pagination, search, and status filter
-- **Meeting Details**: View full meeting info, add interview notes, update status, view history
-- **Feedback**: Interviewers and admins can add interview feedback
+- **Meeting Summary**: Aggregated meeting statistics
+- **Meeting Details**: View full meeting info, add interview notes, update status
+- **Feedback**: Interviewers and admins can add interview feedback with topic, comment, and rating
 
 ## Project Structure
 
@@ -27,25 +28,37 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 meeting-manager/
 ├── apps/
 │   ├── frontend/              # Nuxt 4 application
-│   │   ├── app/               # Pages, components, composables, layouts
-│   │   ├── stores/            # Pinia stores
+│   │   ├── app/
+│   │   │   ├── assets/css/    # main.css, tailwind.css
+│   │   │   ├── components/    # MeetingForm, FeedbackForm, FeedbackList, StatusBadge, MeetingCard
+│   │   │   ├── composables/   # useApi, useAuth, useMeetings
+│   │   │   ├── layouts/       # default.vue, auth.vue
+│   │   │   ├── middleware/    # auth.ts
+│   │   │   ├── pages/         # index, dashboard, auth/*, meetings/*
+│   │   │   ├── plugins/       # auth.client.ts
+│   │   │   └── stores/        # auth.ts, meeting.ts
 │   │   └── nuxt.config.ts
 │   └── backend/               # Express.js API
 │       ├── src/
-│       │   ├── config/
-│       │   ├── controllers/
-│       │   ├── middlewares/
-│       │   ├── models/
-│       │   ├── routes/
-│       │   ├── services/
-│       │   ├── utils/
-│       │   └── validators/
+│       │   ├── config/        # env.ts, database.ts
+│       │   ├── controllers/   # auth.controller.ts, meeting.controller.ts
+│       │   ├── middlewares/   # authenticate.ts, authorize.ts, validate.ts, errorHandler.ts
+│       │   ├── models/        # User.ts, Meeting.ts
+│       │   ├── routes/        # auth.routes.ts, meeting.routes.ts, index.ts
+│       │   ├── services/      # auth.service.ts, meeting.service.ts
+│       │   ├── utils/         # errors.ts
+│       │   └── validators/    # auth.validator.ts, meeting.validator.ts, user.validator.ts
 │       └── tests/
 │           ├── unit/
-│           └── integration/
+│           ├── integration/
+│           └── helpers/       # db.ts (mongodb-memory-server)
 ├── packages/
 │   └── shared/                # Shared TypeScript types & constants
-├── docker/                    # Dockerfiles
+│       └── src/
+│           ├── types/         # user.ts, meeting.ts, api.ts
+│           └── constants/     # index.ts
+├── docker/                    # Dockerfile.backend, Dockerfile.frontend
+├── docs/                      # Architecture docs, wireframes, plans
 ├── docker-compose.yml
 ├── docker-compose.dev.yml
 └── .env.example
@@ -55,8 +68,8 @@ meeting-manager/
 
 ### Prerequisites
 
-- Node.js v24.14.0
-- pnpm 9.x
+- Node.js >= 24
+- pnpm >= 9
 - Docker & Docker Compose
 - Git
 
@@ -94,15 +107,15 @@ NUXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 # Start MongoDB (Docker)
 docker compose -f docker-compose.dev.yml up mongodb -d
 
-# String frontend + backend (parallel)
+# Start frontend + backend (parallel)
 pnpm dev
 
-#OR
+# OR
 
-# Start backend (separate terminal)
+# Start backend only
 pnpm dev:api
 
-# Start frontend (separate terminal)
+# Start frontend only
 pnpm dev:web
 ```
 
@@ -114,13 +127,29 @@ pnpm dev:web
 
 ```bash
 # All backend tests
-pnpm --filter backend test
+pnpm test:api
 
 # Unit tests only
-pnpm --filter backend test:unit
+pnpm test:api:unit
 
 # Integration tests only
-pnpm --filter backend test:integration
+pnpm test:api:integration
+```
+
+### Linting & Formatting
+
+```bash
+# Lint all workspaces
+pnpm lint
+
+# Type check all workspaces
+pnpm type-check
+
+# Format code
+pnpm format
+
+# Check formatting
+pnpm format:check
 ```
 
 ### Docker (Production)
@@ -135,20 +164,29 @@ docker compose up -d
 
 ## API Endpoints
 
-| Method | Path                            | Description         |
-| ------ | ------------------------------- | ------------------- |
-| POST   | `/api/v1/auth/register`         | Register user       |
-| POST   | `/api/v1/auth/register/guest`   | Register guest user |
-| POST   | `/api/v1/auth/login`            | Login               |
-| POST   | `/api/v1/auth/login/guest`      | Guest login         |
-| POST   | `/api/v1/auth/refresh`          | Refresh token       |
-| POST   | `/api/v1/auth/logout`           | Logout              |
-| GET    | `/api/v1/meetings`              | List meetings       |
-| POST   | `/api/v1/meetings`              | Create meeting      |
-| GET    | `/api/v1/meetings/:id`          | Get meeting         |
-| PUT    | `/api/v1/meetings/:id`          | Update meeting      |
-| DELETE | `/api/v1/meetings/:id`          | Delete meeting      |
-| POST   | `/api/v1/meetings/:id/feedback` | Add feedback        |
+### Auth Routes (`/api/v1/auth`) — Rate limited: 20 req/15min
+
+| Method | Path                          | Description         | Auth     |
+| ------ | ----------------------------- | ------------------- | -------- |
+| GET    | `/api/v1/auth/me`             | Get current user    | Required |
+| POST   | `/api/v1/auth/register`       | Register user       | No       |
+| POST   | `/api/v1/auth/register/guest` | Register guest user | No       |
+| POST   | `/api/v1/auth/login`          | Login               | No       |
+| POST   | `/api/v1/auth/login/guest`    | Guest login         | No       |
+| POST   | `/api/v1/auth/refresh`        | Refresh token       | No       |
+| POST   | `/api/v1/auth/logout`         | Logout              | Required |
+
+### Meeting Routes (`/api/v1/meetings`)
+
+| Method | Path                            | Description     | Auth     |
+| ------ | ------------------------------- | --------------- | -------- |
+| GET    | `/api/v1/meetings/summary`      | Meeting summary | Required |
+| GET    | `/api/v1/meetings`              | List meetings   | Required |
+| GET    | `/api/v1/meetings/:id`          | Get meeting     | Required |
+| POST   | `/api/v1/meetings`              | Create meeting  | Required |
+| PUT    | `/api/v1/meetings/:id`          | Update meeting  | Required |
+| DELETE | `/api/v1/meetings/:id`          | Delete meeting  | Required |
+| POST   | `/api/v1/meetings/:id/feedback` | Add feedback    | Required |
 
 See [`docs/architectures/api-spec.md`](docs/architectures/api-spec.md) for full API documentation.
 
@@ -156,6 +194,8 @@ See [`docs/architectures/api-spec.md`](docs/architectures/api-spec.md) for full 
 
 - [`docs/architectures/overview.md`](docs/architectures/overview.md) — Project overview, architecture, and non-functional requirements
 - [`docs/architectures/api-spec.md`](docs/architectures/api-spec.md) — Full API specification
+- [`docs/architectures/api-test-case.md`](docs/architectures/api-test-case.md) — API test cases
 - [`docs/architectures/db-schema.md`](docs/architectures/db-schema.md) — Database schema
 - [`docs/architectures/requirement.md`](docs/architectures/requirement.md) — Project requirements
+- [`docs/wireframes/`](docs/wireframes/) — UI wireframes (login, register, dashboard, booking form, candidate summary, components)
 - [`docs/plans/README.md`](docs/plans/README.md) — Project plan and phase breakdown
