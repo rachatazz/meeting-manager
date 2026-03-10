@@ -141,14 +141,9 @@ const todayMeetings = computed(() => meetingStore.meetings);
 const pagination = computed(() => meetingStore.pagination);
 const totalPages = computed(() => pagination.value?.totalPages ?? 1);
 
-const todayLabel = computed(() => {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-});
+const { formatDateFull } = useDate();
+
+const todayLabel = computed(() => formatDateFull(new Date()));
 
 async function loadDashboard() {
   loading.value = true;

@@ -256,6 +256,7 @@ import { useMeetingStore } from '~/stores/meeting';
 definePageMeta({ middleware: 'auth' });
 
 const { fetchMeetings } = useMeetings();
+const { formatDateShort, toISODate, toISODateEnd } = useDate();
 const meetingStore = useMeetingStore();
 
 const searchQuery = ref('');
@@ -289,17 +290,8 @@ const sortOptions = [
 
 function formatDateLabel(range: Date[] | null): string {
   if (!range || !range[0]) return '';
-  const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  if (!range[1]) return fmt(range[0]);
-  return `${fmt(range[0])} – ${fmt(range[1])}`;
-}
-
-function toISODate(date: Date): string {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString();
-}
-
-function toISODateEnd(date: Date): string {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).toISOString();
+  if (!range[1]) return formatDateShort(range[0]);
+  return `${formatDateShort(range[0])} – ${formatDateShort(range[1])}`;
 }
 
 let searchTimer: ReturnType<typeof setTimeout>;

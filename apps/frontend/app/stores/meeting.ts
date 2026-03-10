@@ -8,54 +8,56 @@ interface MeetingFilters {
   page: number;
 }
 
-interface MeetingState {
-  meetings: IMeetingListItem[];
-  currentMeeting: IMeeting | null;
-  pagination: IPagination | null;
-  filters: MeetingFilters;
-  loading: boolean;
-  error: string | null;
-}
+export const useMeetingStore = defineStore('meeting', () => {
+  const meetings = ref<IMeetingListItem[]>([]);
+  const currentMeeting = ref<IMeeting | null>(null);
+  const pagination = ref<IPagination | null>(null);
+  const filters = ref<MeetingFilters>({
+    search: '',
+    status: '',
+    sort: 'date_desc',
+    page: 1,
+  });
+  const loading = ref(false);
+  const error = ref<string | null>(null);
 
-export const useMeetingStore = defineStore('meeting', {
-  state: (): MeetingState => ({
-    meetings: [],
-    currentMeeting: null,
-    pagination: null,
-    filters: {
-      search: '',
-      status: '',
-      sort: 'date_desc',
-      page: 1,
-    },
-    loading: false,
-    error: null,
-  }),
+  function setMeetings(newMeetings: IMeetingListItem[], newPagination: IPagination) {
+    meetings.value = newMeetings;
+    pagination.value = newPagination;
+  }
 
-  actions: {
-    setMeetings(meetings: IMeetingListItem[], pagination: IPagination) {
-      this.meetings = meetings;
-      this.pagination = pagination;
-    },
+  function setCurrentMeeting(meeting: IMeeting | null) {
+    currentMeeting.value = meeting;
+  }
 
-    setCurrentMeeting(meeting: IMeeting | null) {
-      this.currentMeeting = meeting;
-    },
+  function setFilters(newFilters: Partial<MeetingFilters>) {
+    filters.value = { ...filters.value, ...newFilters };
+  }
 
-    setFilters(filters: Partial<MeetingFilters>) {
-      this.filters = { ...this.filters, ...filters };
-    },
+  function setLoading(value: boolean) {
+    loading.value = value;
+  }
 
-    setLoading(loading: boolean) {
-      this.loading = loading;
-    },
+  function setError(value: string | null) {
+    error.value = value;
+  }
 
-    setError(error: string | null) {
-      this.error = error;
-    },
+  function resetFilters() {
+    filters.value = { search: '', status: '', sort: 'date_desc', page: 1 };
+  }
 
-    resetFilters() {
-      this.filters = { search: '', status: '', sort: 'date_desc', page: 1 };
-    },
-  },
+  return {
+    meetings,
+    currentMeeting,
+    pagination,
+    filters,
+    loading,
+    error,
+    setMeetings,
+    setCurrentMeeting,
+    setFilters,
+    setLoading,
+    setError,
+    resetFilters,
+  };
 });

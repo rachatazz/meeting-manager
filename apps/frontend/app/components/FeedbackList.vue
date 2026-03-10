@@ -30,7 +30,5 @@ import type { IFeedback } from '@meeting-manager/shared';
 
 defineProps<{ feedbacks: IFeedback[] }>();
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
+const { formatDate } = useDate();
 </script>
