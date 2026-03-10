@@ -87,18 +87,16 @@ definePageMeta({ layout: 'auth' });
 const { login, loginGuest, getStoredFingerprint } = useAuth();
 
 const form = reactive({ email: '', password: '' });
-const errors = reactive<Record<string, string>>({});
+const { errors, validate } = useFormValidation();
 const loading = ref(false);
 const guestLoading = ref(false);
 const apiError = ref('');
 
-function validate(): boolean {
-  Object.keys(errors).forEach((k) => delete errors[k]);
-  if (!form.email) errors.email = 'Email is required';
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Invalid email format';
-  if (!form.password) errors.password = 'Password is required';
-  else if (form.password.length < 6) errors.password = 'Password must be at least 6 characters';
-  return Object.keys(errors).length === 0;
+function validateForm(): boolean {
+  return validate(form, {
+    email: [rules.required('Email'), rules.email()],
+    password: [rules.required('Password'), rules.minLength('Password', 6)],
+  });
 }
 
 async function handleContinueAsGuest() {
@@ -119,7 +117,7 @@ async function handleContinueAsGuest() {
 }
 
 async function handleLogin() {
-  if (!validate()) return;
+  if (!validateForm()) return;
   loading.value = true;
   apiError.value = '';
   try {

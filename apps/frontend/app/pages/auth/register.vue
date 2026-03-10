@@ -134,7 +134,7 @@ const roles = [
 ];
 
 const form = reactive({ fullName: '', email: '', password: '', confirmPassword: '', role: 'recruiter' });
-const errors = reactive<Record<string, string>>({});
+const { errors, validate } = useFormValidation();
 const loading = ref(false);
 const apiError = ref('');
 
@@ -150,21 +150,18 @@ const passwordStrength = computed(() => {
   return { pct: (score / 4) * 100, color: colors[score] };
 });
 
-function validate(): boolean {
-  Object.keys(errors).forEach((k) => delete errors[k]);
-  if (!form.fullName.trim() || form.fullName.length < 2)
-    errors.fullName = 'Full name must be at least 2 characters';
-  if (!form.email) errors.email = 'Email is required';
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Invalid email format';
-  if (!form.password || form.password.length < 8)
-    errors.password = 'Password must be at least 8 characters';
-  if (form.password !== form.confirmPassword) errors.confirmPassword = 'Passwords do not match';
-  if (!form.role) errors.role = 'Role is required';
-  return Object.keys(errors).length === 0;
+function validateForm(): boolean {
+  return validate(form, {
+    fullName: [rules.required('Full name'), rules.minLength('Full name', 2)],
+    email: [rules.required('Email'), rules.email()],
+    password: [rules.required('Password'), rules.minLength('Password', 8)],
+    confirmPassword: [rules.match('Passwords', () => form.password)],
+    role: [rules.required('Role')],
+  });
 }
 
 async function handleRegister() {
-  if (!validate()) return;
+  if (!validateForm()) return;
   loading.value = true;
   apiError.value = '';
   try {

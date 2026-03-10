@@ -1,7 +1,9 @@
 <template>
   <div>
     <div class="mb-4">
-      <label class="block text-sm font-medium text-slate-900 mb-2">Topic <span class="text-red-500">*</span></label>
+      <label class="block text-sm font-medium text-slate-900 mb-2"
+        >Topic <span class="text-red-500">*</span></label
+      >
       <InputText
         v-model="form.topic"
         placeholder="e.g. Technical Skills, Communication..."
@@ -11,19 +13,10 @@
     </div>
 
     <div class="mb-4">
-      <label class="block text-sm font-medium text-slate-900 mb-2">Rating <span class="text-red-500">*</span></label>
-      <div class="flex items-center gap-2">
-        <button
-          v-for="star in 5"
-          :key="star"
-          type="button"
-          class="text-3xl leading-none transition-colors duration-150 focus:outline-none p-1"
-          :style="{ color: star <= (hoverRating || form.rating) ? '#F59E0B' : '#E2E8F0' }"
-          @mouseenter="hoverRating = star"
-          @mouseleave="hoverRating = 0"
-          @click="form.rating = star"
-        >★</button>
-      </div>
+      <label class="block text-sm font-medium text-slate-900 mb-2"
+        >Rating <span class="text-red-500">*</span></label
+      >
+      <StarRating v-model="form.rating" :interactive="true" size="lg" />
       <small v-if="errors.rating" class="text-red-500 text-xs mt-1">{{ errors.rating }}</small>
     </div>
 
@@ -34,7 +27,7 @@
         placeholder="Share your feedback..."
         :rows="4"
         class="w-full"
-        style="resize: vertical;"
+        style="resize: vertical"
       />
     </div>
 
@@ -65,7 +58,6 @@ const emit = defineEmits<{
 
 const form = reactive({ rating: 0, topic: '', comment: '' });
 const errors = reactive<Record<string, string>>({});
-const hoverRating = ref(0);
 const loading = ref(false);
 
 function validate(): boolean {

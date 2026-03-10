@@ -57,15 +57,13 @@
     </div>
 
     <!-- Empty state -->
-    <div
+    <EmptyState
       v-else-if="todayMeetings.length === 0"
-      class="bg-white border border-slate-200 rounded-lg p-8 sm:p-16 text-center"
+      title="No meetings today"
+      description="Your schedule is clear for today"
     >
-      <i class="pi pi-calendar text-5xl text-slate-200 mb-4 block" />
-      <p class="text-xl font-semibold text-slate-900 mb-2">No meetings today</p>
-      <p class="text-sm text-slate-500 mb-6">Your schedule is clear for today</p>
       <Button label="Schedule Meeting" icon="pi pi-plus" @click="navigateTo('/meetings/new')" />
-    </div>
+    </EmptyState>
 
     <!-- Meeting cards -->
     <div v-else class="flex flex-col gap-4">

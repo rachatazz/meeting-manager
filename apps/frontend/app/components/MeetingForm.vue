@@ -30,71 +30,7 @@
 
       <!-- Section 1: Meeting Info + Candidate -->
       <div class="px-5 sm:px-6 py-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-          <!-- Title (full width) -->
-          <div class="sm:col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1"
-              >Title <span class="text-red-500">*</span></label
-            >
-            <InputText
-              v-model="form.title"
-              placeholder="e.g., Technical Interview - Round 1"
-              class="w-full"
-              :class="{ 'border-red-500': errors.title }"
-            />
-            <small v-if="errors.title" class="text-red-500 text-xs mt-0.5 block">{{
-              errors.title
-            }}</small>
-          </div>
-          <!-- Description (full width) -->
-          <div class="sm:col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
-            <Textarea
-              v-model="form.description"
-              placeholder="Brief description of the meeting..."
-              :rows="2"
-              class="w-full"
-              style="resize: vertical"
-            />
-          </div>
-          <!-- Candidate Name -->
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1"
-              >Candidate Name <span class="text-red-500">*</span></label
-            >
-            <div class="relative">
-              <InputText
-                v-model="form.candidateName"
-                placeholder="Start typing to search..."
-                class="w-full pr-10"
-                :class="{ 'border-red-500': errors.candidateName }"
-              />
-              <i
-                class="pi pi-search absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"
-              />
-            </div>
-            <small v-if="errors.candidateName" class="text-red-500 text-xs mt-0.5 block">{{
-              errors.candidateName
-            }}</small>
-          </div>
-          <!-- Position -->
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1"
-              >Position <span class="text-red-500">*</span></label
-            >
-            <Select
-              v-model="form.position"
-              :options="positions"
-              editable
-              placeholder="Select Position"
-              class="w-full"
-              :class="{ 'border-red-500': errors.position }"
-            />
-            <small v-if="errors.position" class="text-red-500 text-xs mt-0.5 block">{{
-              errors.position
-            }}</small>
-          </div>
-        </div>
+        <MeetingFormBasicInfo :form="form" :errors="errors" @update="onFieldUpdate" />
       </div>
 
       <div class="border-t border-slate-100 mx-5 sm:mx-6" />
@@ -104,167 +40,7 @@
         <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
           Schedule & Location
         </p>
-        <div class="flex flex-col gap-4">
-          <!-- Date & Time row -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Date <span class="text-red-500">*</span></label
-              >
-              <DatePicker
-                v-model="form.date"
-                placeholder="Select Date"
-                date-format="M dd, yy"
-                class="w-full"
-                :class="{ 'border-red-500': errors.date }"
-                :min-date="new Date()"
-              />
-              <small v-if="errors.date" class="text-red-500 text-xs mt-0.5 block">{{
-                errors.date
-              }}</small>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Start Time <span class="text-red-500">*</span></label
-              >
-              <Select
-                v-model="form.startTime"
-                :options="timeOptions"
-                option-label="label"
-                option-value="value"
-                placeholder="Start Time"
-                class="w-full"
-                :class="{ 'border-red-500': errors.startTime }"
-              />
-              <small v-if="errors.startTime" class="text-red-500 text-xs mt-0.5 block">{{
-                errors.startTime
-              }}</small>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >End Time <span class="text-red-500">*</span></label
-              >
-              <Select
-                v-model="form.endTime"
-                :options="timeOptions"
-                option-label="label"
-                option-value="value"
-                placeholder="End Time"
-                class="w-full"
-                :class="{ 'border-red-500': errors.endTime }"
-              />
-              <small v-if="errors.endTime" class="text-red-500 text-xs mt-0.5 block">{{
-                errors.endTime
-              }}</small>
-            </div>
-          </div>
-
-          <!-- Meeting Type + Platform/Location in one row -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Meeting Type compact cards -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Meeting Type <span class="text-red-500">*</span></label
-              >
-              <div class="grid grid-cols-2 gap-2">
-                <label
-                  class="flex items-center gap-2 px-3 py-2.5 border rounded-lg cursor-pointer transition-all"
-                  :class="
-                    form.meetingType === 'online'
-                      ? 'border-blue-500 bg-blue-50/60 ring-1 ring-blue-500'
-                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                  "
-                >
-                  <RadioButton
-                    v-model="form.meetingType"
-                    input-id="type-online"
-                    value="online"
-                    class="hidden"
-                  />
-                  <i
-                    class="pi pi-video text-sm"
-                    :class="form.meetingType === 'online' ? 'text-blue-600' : 'text-slate-400'"
-                  />
-                  <span
-                    class="text-sm font-medium"
-                    :class="form.meetingType === 'online' ? 'text-blue-700' : 'text-slate-700'"
-                    >Online</span
-                  >
-                </label>
-                <label
-                  class="flex items-center gap-2 px-3 py-2.5 border rounded-lg cursor-pointer transition-all"
-                  :class="
-                    form.meetingType === 'onsite'
-                      ? 'border-blue-500 bg-blue-50/60 ring-1 ring-blue-500'
-                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                  "
-                >
-                  <RadioButton
-                    v-model="form.meetingType"
-                    input-id="type-onsite"
-                    value="onsite"
-                    class="hidden"
-                  />
-                  <i
-                    class="pi pi-map-marker text-sm"
-                    :class="form.meetingType === 'onsite' ? 'text-blue-600' : 'text-slate-400'"
-                  />
-                  <span
-                    class="text-sm font-medium"
-                    :class="form.meetingType === 'onsite' ? 'text-blue-700' : 'text-slate-700'"
-                    >Onsite</span
-                  >
-                </label>
-              </div>
-            </div>
-            <!-- Platform -->
-            <div v-if="form.meetingType === 'online'">
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Platform <span class="text-red-500">*</span></label
-              >
-              <Select
-                v-model="form.platform"
-                :options="platforms"
-                placeholder="Select Platform"
-                class="w-full"
-                editable
-                :class="{ 'border-red-500': errors.platform }"
-              />
-              <small v-if="errors.platform" class="text-red-500 text-xs mt-0.5 block">{{
-                errors.platform
-              }}</small>
-            </div>
-            <!-- Location -->
-            <div v-if="form.meetingType === 'onsite'">
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Room / Location <span class="text-red-500">*</span></label
-              >
-              <InputText
-                v-model="form.location"
-                placeholder="e.g., Conference Room 301"
-                class="w-full"
-                :class="{ 'border-red-500': errors.location }"
-              />
-              <small v-if="errors.location" class="text-red-500 text-xs mt-0.5 block">{{
-                errors.location
-              }}</small>
-            </div>
-          </div>
-          <!-- Meeting Link (online only) -->
-          <div v-if="form.meetingType === 'online'">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Meeting Link</label>
-            <div class="relative">
-              <InputText
-                v-model="form.meetingLink"
-                placeholder="e.g., https://zoom.us/j/123456789"
-                class="w-full pl-9"
-              />
-              <i
-                class="pi pi-link absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"
-              />
-            </div>
-          </div>
-        </div>
+        <MeetingFormSchedule :form="form" :errors="errors" @update="onFieldUpdate" />
       </div>
 
       <div class="border-t border-slate-100 mx-5 sm:mx-6" />
@@ -338,19 +114,6 @@ const emit = defineEmits<{
   ];
 }>();
 
-const positions = [
-  'Software Engineer',
-  'Backend Developer',
-  'Frontend Developer',
-  'Full Stack Developer',
-  'DevOps Engineer',
-  'QA Engineer',
-  'Product Manager',
-  'UI/UX Designer',
-];
-
-const platforms = ['Zoom', 'Google Meet', 'Microsoft Teams'];
-
 const statusOptions = [
   { label: 'Pending', value: 'pending' as const },
   { label: 'Confirmed', value: 'confirmed' as const },
@@ -362,21 +125,6 @@ const statusStyles: Record<string, { active: string; dot: string }> = {
   confirmed: { active: 'bg-white shadow-sm text-emerald-700', dot: 'bg-emerald-500' },
   cancelled: { active: 'bg-white shadow-sm text-red-700', dot: 'bg-red-500' },
 };
-
-const timeOptions = computed(() => {
-  const options: { label: string; value: string }[] = [];
-  for (let h = 8; h <= 20; h++) {
-    for (const m of [0, 15, 30, 45]) {
-      if (h === 20 && m > 0) break;
-      const hour12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
-      const ampm = h < 12 ? 'AM' : 'PM';
-      const label = `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
-      const value = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-      options.push({ label, value });
-    }
-  }
-  return options;
-});
 
 function parseDateAndTime(isoStr: string) {
   const d = new Date(isoStr);
@@ -399,12 +147,16 @@ const form = reactive({
   meetingType: (props.meeting?.meetingType ?? 'online') as 'online' | 'onsite',
   platform: props.meeting?.platform ?? '',
   meetingLink: props.meeting?.meetingLink ?? '',
-  location: '',
+  location: props.meeting?.location ?? '',
   notes: props.meeting?.notes ?? '',
   status: props.meeting?.status ?? 'pending',
 });
 
 const errors = reactive<Record<string, string>>({});
+
+function onFieldUpdate(field: string, value: unknown) {
+  (form as Record<string, unknown>)[field] = value;
+}
 
 function buildDateTime(date: Date, timeStr: string): string {
   const [h = 0, m = 0] = timeStr.split(':').map(Number);

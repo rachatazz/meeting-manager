@@ -7,17 +7,12 @@
       <div class="py-4">
         <p v-if="fb.topic" class="text-sm font-medium text-slate-700 mb-1">{{ fb.topic }}</p>
         <div class="flex items-center gap-2 mb-1">
-          <div class="flex items-center gap-0.5">
-            <span
-              v-for="star in 5"
-              :key="star"
-              class="text-xl leading-none"
-              :style="{ color: star <= Math.round(fb.rating) ? '#F59E0B' : '#E2E8F0' }"
-            >★</span>
-          </div>
+          <StarRating :model-value="fb.rating" size="md" />
           <span class="font-semibold text-slate-900 text-base ml-1">{{ fb.rating }}/5</span>
         </div>
-        <p v-if="fb.comment" class="text-sm text-slate-900 leading-relaxed mb-1">{{ fb.comment }}</p>
+        <p v-if="fb.comment" class="text-sm text-slate-900 leading-relaxed mb-1">
+          {{ fb.comment }}
+        </p>
         <p class="text-sm text-slate-400">{{ formatDate(fb.createdAt) }}</p>
       </div>
       <hr v-if="idx < feedbacks.length - 1" class="border-slate-200" />

@@ -183,7 +183,7 @@
       <slot />
     </main>
 
-    <Toast position="top-right" />
+    <Toast position="top-center" />
     <ConfirmDialog />
   </div>
 </template>
