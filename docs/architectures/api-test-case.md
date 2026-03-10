@@ -63,6 +63,29 @@ const validFeedback = {
 };
 ```
 
+### Admin User Helper
+
+Admin users cannot be created via the registration endpoint (only `recruiter` and `interviewer` are allowed). Tests that require an admin user create one directly in the database and sign a JWT manually:
+
+```typescript
+async function createAdminAndLogin() {
+  const hashedPassword = await bcrypt.hash('SecurePass123!', 10);
+  const user = await User.create({
+    email: `admin-${userCounter}@test.local`,
+    password: hashedPassword,
+    fullName: 'Test admin',
+    role: 'admin',
+    userType: 'user',
+  });
+  const accessToken = jwt.sign(
+    { id: user._id.toString(), email: user.email, role: user.role },
+    env.JWT_SECRET,
+    { expiresIn: env.JWT_EXPIRES_IN },
+  );
+  return { accessToken, userId: user._id.toString() };
+}
+```
+
 ---
 
 ## Authentication Tests
@@ -534,7 +557,7 @@ it('should create a meeting for authenticated user', async () => {
 | # | Test Case | Status | Method |
 |---|-----------|--------|--------|
 | M4.1 | Update meeting for owner | 200 | Integration + Unit |
-| M4.2 | Allow admin to update any meeting | 200 | Integration + Unit |
+| M4.2 | Allow admin to update any meeting (admin created via DB) | 200 | Integration + Unit |
 | M4.3 | 403 when non-owner tries to update | 403 FORBIDDEN | Integration + Unit |
 | M4.4 | 404 for non-existent meeting | 404 MEETING_NOT_FOUND | Integration + Unit |
 | M4.5 | 401 without authentication | 401 | Integration |
@@ -547,7 +570,7 @@ it('should create a meeting for authenticated user', async () => {
 | # | Test Case | Status | Method |
 |---|-----------|--------|--------|
 | M5.1 | Delete meeting for owner | 200 | Integration + Unit |
-| M5.2 | Allow admin to delete any meeting | 200 | Integration + Unit |
+| M5.2 | Allow admin to delete any meeting (admin created via DB) | 200 | Integration + Unit |
 | M5.3 | 403 when non-owner tries to delete | 403 FORBIDDEN | Integration + Unit |
 | M5.4 | 404 for non-existent meeting | 404 MEETING_NOT_FOUND | Integration + Unit |
 | M5.5 | 401 without authentication | 401 | Integration |
@@ -664,5 +687,5 @@ pnpm test:integration      # Integration tests only
 
 ---
 
-**Document Version**: 2.0
-**Last Updated**: March 8, 2026
+**Document Version**: 2.1
+**Last Updated**: March 10, 2026

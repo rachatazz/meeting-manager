@@ -1,6 +1,10 @@
 import request from 'supertest';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { app } from '../../src/app';
 import { setupTestDB, teardownTestDB, clearDB } from '../helpers/db';
+import { User } from '../../src/models/User';
+import { env } from '../../src/config/env';
 
 beforeAll(async () => {
   await setupTestDB();
@@ -26,8 +30,13 @@ const validMeeting = () => ({
   platform: 'Zoom',
 });
 
+let adminPasswordHash: string;
+beforeAll(async () => {
+  adminPasswordHash = await bcrypt.hash('SecurePass123!', 10);
+});
+
 let userCounter = 0;
-async function registerAndLogin(role: 'recruiter' | 'interviewer' | 'admin' = 'recruiter') {
+async function registerAndLogin(role: 'recruiter' | 'interviewer' = 'recruiter') {
   userCounter++;
   const email = `${role}-${userCounter}@test.local`;
   const res = await request(app)
@@ -39,6 +48,27 @@ async function registerAndLogin(role: 'recruiter' | 'interviewer' | 'admin' = 'r
   return {
     accessToken: res.body.data.accessToken as string,
     userId: res.body.data.user.id as string,
+  };
+}
+
+async function createAdminAndLogin() {
+  userCounter++;
+  const email = `admin-${userCounter}@test.local`;
+  const user = await User.create({
+    email,
+    password: adminPasswordHash,
+    fullName: 'Test admin',
+    role: 'admin',
+    userType: 'user',
+  });
+  const accessToken = jwt.sign(
+    { id: user._id.toString(), email: user.email, role: user.role },
+    env.JWT_SECRET,
+    { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions,
+  );
+  return {
+    accessToken,
+    userId: user._id.toString(),
   };
 }
 
@@ -283,7 +313,7 @@ describe('PUT /api/v1/meetings/:id', () => {
 
   it('should allow admin to update any meeting', async () => {
     const { accessToken: ownerToken } = await registerAndLogin('recruiter');
-    const { accessToken: adminToken } = await registerAndLogin('admin');
+    const { accessToken: adminToken } = await createAdminAndLogin();
 
     const createRes = await request(app)
       .post('/api/v1/meetings')
@@ -363,7 +393,7 @@ describe('DELETE /api/v1/meetings/:id', () => {
 
   it('should allow admin to delete any meeting', async () => {
     const { accessToken: ownerToken } = await registerAndLogin('recruiter');
-    const { accessToken: adminToken } = await registerAndLogin('admin');
+    const { accessToken: adminToken } = await createAdminAndLogin();
 
     const createRes = await request(app)
       .post('/api/v1/meetings')
