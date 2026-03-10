@@ -10,8 +10,8 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 
 - **Monorepo**: pnpm + workspace
 - **Runtime**: Node.js v24.14.0
-- **Frontend**: Nuxt 3 (v4 compat mode) + PrimeVue 4 + TailwindCSS + Pinia
-- **Backend**: Express.js + JWT + Zod + Swagger + Mongoose
+- **Frontend**: Nuxt 4 + PrimeVue 4 + TailwindCSS + Pinia
+- **Backend**: Express.js + JWT + Zod + Mongoose
 - **Database**: MongoDB
 - **Language**: TypeScript (Strict Mode)
 - **Testing**: Unit & E2E tests
@@ -104,7 +104,7 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 ```
 meeting-manager/
 ├── apps/
-│   ├── frontend/              # Nuxt 3 application (v4 compat mode)
+│   ├── frontend/              # Nuxt 4 application
 │   │   ├── app/              # App directory
 │   │   │   ├── assets/css/   # main.css, tailwind.css
 │   │   │   ├── components/   # MeetingForm, FeedbackForm, FeedbackList, StatusBadge, MeetingCard
@@ -324,7 +324,7 @@ NUXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 
 - Node.js: 24.14.0
 - pnpm: 9.x
-- Nuxt: 3.x (v4 compat mode)
+- Nuxt: 4.x
 - Vue: 3.x
 - PrimeVue: 4.x
 - Express: 4.x

@@ -7,7 +7,7 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 - **Monorepo**: pnpm workspaces
 - **Runtime**: Node.js v24.14.0
 - **Frontend**: Nuxt 4 + PrimeVue 4 + TailwindCSS + Pinia
-- **Backend**: Express.js + JWT + Zod + Swagger + Mongoose
+- **Backend**: Express.js + JWT + Zod + Mongoose
 - **Database**: MongoDB 7.x
 - **Language**: TypeScript (strict mode)
 - **Testing**: Jest + Supertest + mongodb-memory-server
@@ -20,15 +20,6 @@ A web-based Meeting Manager application that enables recruiters and hiring manag
 - **Dashboard**: List upcoming meetings with pagination, search, and status filter
 - **Meeting Details**: View full meeting info, add interview notes, update status, view history
 - **Feedback**: Interviewers and admins can add interview feedback
-
-## User Roles
-
-| Role        | Permissions                                       |
-| ----------- | ------------------------------------------------- |
-| Recruiter   | Full access to create, edit, delete meetings      |
-| Interviewer | View meetings, add feedback                       |
-| Admin       | Full system access + user management              |
-| Guest       | Register with fullName + browser fingerprint only |
 
 ## Project Structure
 
@@ -103,7 +94,12 @@ NUXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 # Start MongoDB (Docker)
 docker compose -f docker-compose.dev.yml up mongodb -d
 
-# Start backend
+# String frontend + backend (parallel)
+pnpm dev
+
+#OR
+
+# Start backend (separate terminal)
 pnpm dev:api
 
 # Start frontend (separate terminal)
@@ -130,6 +126,10 @@ pnpm --filter backend test:integration
 ### Docker (Production)
 
 ```bash
+# Copy environment variables
+cp .env.example .env
+
+# Start frontend + backend + mongodb
 docker compose up -d
 ```
 
