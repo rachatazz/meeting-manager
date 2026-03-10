@@ -21,7 +21,6 @@ services:
     env_file:
       - .env
     environment:
-      MONGODB_URI: mongodb://mongodb:27017/meeting-manager
       NODE_ENV: production
     ports:
       - '3001:3001'
@@ -38,8 +37,6 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    environment:
-      NUXT_PUBLIC_API_URL: http://backend:3001/api/v1
     ports:
       - '3000:3000'
     depends_on:
