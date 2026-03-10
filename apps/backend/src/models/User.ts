@@ -18,7 +18,6 @@ const userSchema = new Schema<IUserDocument>(
     email: {
       type: String,
       required: false,
-      default: null,
       unique: true,
       sparse: true,
       lowercase: true,
@@ -34,7 +33,6 @@ const userSchema = new Schema<IUserDocument>(
     fingerprint: {
       type: String,
       required: false,
-      default: null,
       unique: true,
       sparse: true,
       select: false,

@@ -15,14 +15,16 @@ app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-if (env.NODE_ENV !== 'test') {
+if (env.NODE_ENV === 'production') {
+  app.use(morgan('combined'));
+} else {
   app.use(morgan('dev'));
 }
 
-if (env.NODE_ENV !== 'test') {
+if (env.NODE_ENV === 'production') {
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 20,
+    max: 60,
     message: {
       success: false,
       error: { code: 'RATE_LIMIT', message: 'Too many requests' },
