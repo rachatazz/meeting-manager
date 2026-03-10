@@ -66,9 +66,10 @@
       icon="pi pi-user"
       severity="secondary"
       outlined
-      :disabled="loading"
+      :disabled="loading || guestLoading"
+      :loading="guestLoading"
       class="w-full"
-      @click="navigateTo('/auth/register-guest')"
+      @click="handleContinueAsGuest"
     />
 
     <p class="mt-6 text-center text-sm text-slate-500">
@@ -83,11 +84,12 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'auth' });
 
-const { login } = useAuth();
+const { login, loginGuest, getStoredFingerprint } = useAuth();
 
 const form = reactive({ email: '', password: '' });
 const errors = reactive<Record<string, string>>({});
 const loading = ref(false);
+const guestLoading = ref(false);
 const apiError = ref('');
 
 function validate(): boolean {
@@ -97,6 +99,23 @@ function validate(): boolean {
   if (!form.password) errors.password = 'Password is required';
   else if (form.password.length < 6) errors.password = 'Password must be at least 6 characters';
   return Object.keys(errors).length === 0;
+}
+
+async function handleContinueAsGuest() {
+  const fingerprint = getStoredFingerprint();
+  if (!fingerprint) {
+    await navigateTo('/auth/register-guest');
+    return;
+  }
+  guestLoading.value = true;
+  apiError.value = '';
+  try {
+    await loginGuest(fingerprint);
+  } catch {
+    await navigateTo('/auth/register-guest');
+  } finally {
+    guestLoading.value = false;
+  }
 }
 
 async function handleLogin() {
